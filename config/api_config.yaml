@@ -1,0 +1,17 @@
+api:
+  version: "v1"
+
+env: "dev"
+
+server:
+  host: "localhost:"
+  port: 8080
+  timeout_ms: 4s
+  idle_timeout_ms: 60s
+
+tg_bot:
+  token: "7466095384:AAEg1aQpK6vbp0AWodLGbPALCVhHlKY1_kM"
+  webhook_link: "https://a4db-73-192-67-43.ngrok-free.app"
+  webhook_path: "/api/bot/telegram"
+
+

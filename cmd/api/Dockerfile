@@ -1,5 +1,5 @@
 # Stage 1: Build the Go application
-FROM golang:1.22 AS builder
+FROM golang:1.23 AS builder
 
 # Install bash using apt-get since this is likely a Debian/Ubuntu-based image
 RUN apt-get update && apt-get install -y bash
