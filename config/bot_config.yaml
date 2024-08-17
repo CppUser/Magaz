@@ -1,0 +1,37 @@
+
+
+#bot states
+initial_state: "start"
+
+states:
+  start:
+    handler: "startHandler"
+    transitions:
+      chose_state: "city"
+
+  city:
+    handler: "cityHandler"
+    transitions:
+      chose_state: "product"
+
+  product:
+    handler: "productHandler"
+    transitions:
+      chose_state: "quantity"
+
+  quantity:
+    handler: "quantityHandler"
+    transitions:
+      chose_state: "payment"
+
+  payment:
+    handler: "paymentHandler"
+    transitions:
+      chose_state: "end"
+
+  end:
+    handler: "endHandler"
+    transitions:
+      chose_state: "start"
+
+

@@ -4,14 +4,40 @@ api:
 env: "dev"
 
 server:
-  host: "localhost:"
-  port: 8080
+  host: "localhost"
+  port: 8081
   timeout_ms: 4s
   idle_timeout_ms: 60s
 
+db:
+    host: "localhost"
+    port: 5432
+    user: "gans"
+    password: "Steelfree"
+    dbname: "shop"
+    sslmode: "disable"
+    max_open_conns: 10
+    max_idle_conns: 10
+    conn_max_lifetime: 0
+
+redis:
+    host: "localhost"
+    port: 6379
+    password: ""
+    db: 0
+    pool_size: 10
+    min_idle_conns: 1
+    max_conn_age: 0
+    pool_timeout: 4s
+    idle_timeout: 5m
+    idle_check_frequency: 1m
+
+
+
+
 tg_bot:
   token: "7466095384:AAEg1aQpK6vbp0AWodLGbPALCVhHlKY1_kM"
-  webhook_link: "https://a4db-73-192-67-43.ngrok-free.app"
+  webhook_link: "https://2ca3-73-192-67-43.ngrok-free.app"
   webhook_path: "/api/bot/telegram"
 
 
