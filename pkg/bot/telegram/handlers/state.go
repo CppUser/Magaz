@@ -23,8 +23,8 @@ func StartHandler(event fsm.Event, f *fsm.FSM) error {
 	// Inline keyboard parameters
 	inlineKeyboard := tu.InlineKeyboard(
 		tu.InlineKeyboardRow( // Row 1
-			tu.InlineKeyboardButton("Callback data button 1"). // Column 1
-										WithCallbackData("callback_1"),
+			tu.InlineKeyboardButton("Go"). // Column 1
+							WithCallbackData("go"),
 			tu.InlineKeyboardButton("Callback data button 2"). // Column 2
 										WithCallbackData("callback_2"),
 		),

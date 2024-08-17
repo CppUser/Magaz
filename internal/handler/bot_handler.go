@@ -9,10 +9,13 @@ import (
 func (h *Handler) BotRequestHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var update telego.Update
-		if err := c.BindJSON(&update); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+
+		// Bind the JSON to the update struct
+		if err := c.ShouldBindJSON(&update); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid update structure"})
 			return
 		}
+
 		//TODO: Do some other logic here , validating , or possibly connect with other bot to tech support
 		// Send the update to the channel for processing
 		h.Bot.UpdatesChan <- update

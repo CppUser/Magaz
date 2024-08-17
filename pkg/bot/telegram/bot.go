@@ -7,6 +7,7 @@ import (
 	"Magaz/pkg/utils/state/fsm"
 	"github.com/mymmrac/telego"
 	th "github.com/mymmrac/telego/telegohandler"
+	tu "github.com/mymmrac/telego/telegoutil"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 )
@@ -73,6 +74,19 @@ func (b *Bot) InitBot() {
 	//TODO: refer to SetWebhookParams to setup additional parameters (like certificate, pending updates, etc.)
 	_ = b.Config.API.SetWebhook(&telego.SetWebhookParams{
 		URL: b.Config.WebhookLink + b.Config.WebhookPath,
+		AllowedUpdates: []string{
+			"message",
+			"edited_message",
+			"callback_query",
+			"inline_query",
+			"chosen_inline_result",
+			"poll",
+			"poll_answer",
+			"shipping_query",
+			"pre_checkout_query",
+			"my_chat_member",
+			"chat_member",
+		},
 	})
 
 	info, _ := b.Config.API.GetWebhookInfo()
@@ -104,6 +118,42 @@ func (b *Bot) ReceiveUpdates() {
 
 	}, th.CommandEqual("start"))
 
+	// Register new handler with match on a call back query with data equal to `go` and non-nil message
+	bh.HandleCallbackQuery(func(bot *telego.Bot, query telego.CallbackQuery) {
+
+		// Send message
+		_, _ = bot.SendMessage(tu.Message(tu.ID(query.Message.GetChat().ID), "GO"))
+
+		// Answer callback query
+		_ = bot.AnswerCallbackQuery(tu.CallbackQuery(query.ID).WithText("Done"))
+	}, th.AnyCallbackQueryWithMessage(), th.CallbackDataEqual("go"))
+
 	bh.Start()
 
+	//// Define a context key
+	//type userID bool
+	//var userIDKey userID
+	//
+	//// Apply middleware that will retrieve user ID from update
+	//bh.Use(func(bot *telego.Bot, update telego.Update, next th.Handler) {
+	//	// Get initial context
+	//	ctx := update.Context()
+	//
+	//	if update.Message != nil && update.Message.From != nil {
+	//		// Set user ID in context
+	//		ctx = context.WithValue(ctx, userIDKey, update.Message.From.ID)
+	//	}
+	//
+	//	// Update context
+	//	update = update.WithContext(ctx)
+	//	next(bot, update)
+	//})
+	//
+	//// Handle messages
+	//bh.Handle(func(bot *telego.Bot, update telego.Update) {
+	//	ctx := update.Context()
+	//
+	//	// Retrieve user ID from context
+	//	fmt.Println("User ID:", ctx.Value(userIDKey))
+	//}, th.AnyMessage())
 }
