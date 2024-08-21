@@ -1,6 +1,35 @@
 version: '3.8'
 
 services:
+  redis:
+    image: redis:latest
+    container_name: magaz_redis
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./storage/redis:/data  # Bind mount for Redis data storage
+    restart: always
+    networks:
+        - magaz_network
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: magaz_db
+    environment:
+      POSTGRES_USER: gans
+      POSTGRES_PASSWORD: Steelfree
+      POSTGRES_DB: shop
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./storage/postgres:/var/lib/postgresql/data  # Bind mount for PostgreSQL data storage
+    restart: always
+    networks:
+      - magaz_network
+
   api:
     build:
       context: .
@@ -8,9 +37,13 @@ services:
     container_name: magaz_api
     ports:
       - "8080:8080"
+    depends_on:
+      - redis
+      - postgres
     networks:
-      - shop_network
+      - magaz_network
 
 networks:
-  shop_network:
+  magaz_network:
     driver: bridge
+

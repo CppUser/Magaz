@@ -9,17 +9,6 @@ server:
   timeout_ms: 4s
   idle_timeout_ms: 60s
 
-db:
-    host: "localhost"
-    port: 5432
-    user: "gans"
-    password: "Steelfree"
-    dbname: "shop"
-    sslmode: "disable"
-    max_open_conns: 10
-    max_idle_conns: 10
-    conn_max_lifetime: 0
-
 redis:
     host: "localhost"
     port: 6379
@@ -32,12 +21,22 @@ redis:
     idle_timeout: 5m
     idle_check_frequency: 1m
 
-
+database:
+  driver: "postgres"
+  host: "localhost"
+  port: "5432"
+  user: "gans"
+  password: "Steelfree"
+  name: "shop"
+  sslmode: "disable"    # disable, require, verify-ca, verify-full
+  max_open_conns: 10                  # Maximum number of open connections to the database
+  max_idle_conns: 5                   # Maximum number of idle connections in the pool
+  conn_max_lifetime: "30m"            # Maximum amount of time a connection may be reused
 
 
 tg_bot:
   token: "7466095384:AAEg1aQpK6vbp0AWodLGbPALCVhHlKY1_kM"
-  webhook_link: "https://2ca3-73-192-67-43.ngrok-free.app"
+  webhook_link: "https://d607-73-192-67-43.ngrok-free.app"
   webhook_path: "/api/bot/telegram"
 
 

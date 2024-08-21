@@ -7,64 +7,100 @@ import (
 	"Magaz/pkg/utils/state/fsm"
 	"github.com/mymmrac/telego"
 	th "github.com/mymmrac/telego/telegohandler"
-	tu "github.com/mymmrac/telego/telegoutil"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
+)
+
+// TODO: Remove load from config .
+const (
+	StateStart   fsm.State = "start"
+	StateCity    fsm.State = "city"
+	StateProduct fsm.State = "product"
 )
 
 type Bot struct {
 	Config           *config.TGBotConfig
+	API              *telego.Bot
+	Logger           *zap.Logger
 	UpdateChanBuffer uint
 	UpdatesChan      chan telego.Update
 	Cache            *redis.Client
-	FSM              *fsm.FSM
+	DB               *gorm.DB
+	FSM              *fsm.RuleBasedFSM
 }
 
 // TODO: refactor code move some logic to handlers
+
 // InitBot initializes the Telegram bot
 func (b *Bot) InitBot() {
 
 	//TODO: need to handle error properly, currently removed do to code complaint
-	cfg, _ := tgconfig.LoadConfig("bot_config", "yaml", []string{".", "config/"})
+	_, _ = tgconfig.LoadConfig("bot_config", "yaml", []string{".", "config/"})
 	//if err != nil {
 	//	b.Config.Logger.Fatal("Failed to load bot configs", zap.String("error", err.Error()))
 	//}
 
 	////////////////////////////////////////////////////////////////////////////////////////////////
-	//TODO: move to separate function , possibly add to bot struct
-	sm := fsm.NewFSM(fsm.State(cfg.InitialState))
-	for state, stateConfig := range cfg.States {
-		sm.AddState(fsm.State(state))
+	//TODO: handle fsm creation in api .i.e. for dynamic conv creation. Possibly generate handlers with go generate instruction
 
-		for event, nextState := range stateConfig.Transitions {
-			sm.AddTransition(fsm.State(state), fsm.Event{Name: event}, fsm.State(nextState))
-		}
+	//sm := fsm.NewFSM(fsm.State(smcfg.States[0].Name))
+	//for _, state := range smcfg.States {
+	//	for _, transition := range state.Transitions {
+	//		sm.AddTransition(fsm.State(state.Name), fsm.Event(transition.Event), fsm.State(transition.To))
+	//	}
+	//
+	//}
+	//
+	//// Set up handlers
+	//for _, handler := range smcfg.Handlers {
+	//	switch handler.Handler {
+	//	case "StartHandler":
+	//		sm.AddHandler(fsm.Event(handler.Event), handlers.StartHandler)
+	//	case "OrderHandler":
+	//		sm.AddHandler(fsm.Event(handler.Event), handlers.OrderHandler)
+	//	case "CityHandler":
+	//
+	//		sm.AddHandler(fsm.Event(handler.Event), handlers.CityHandler)
+	//	case "ProductHandler":
+	//
+	//		sm.AddHandler(fsm.Event(handler.Event), handlers.ProductHandler)
+	//	case "QuantityHandler":
+	//
+	//		sm.AddHandler(fsm.Event(handler.Event), handlers.QuantityHandler)
+	//	case "PaymentHandler":
+	//
+	//		sm.AddHandler(fsm.Event(handler.Event), handlers.PaymentHandler)
+	//	case "ConformationHandler":
+	//
+	//		sm.AddHandler(fsm.Event(handler.Event), handlers.ConformationHandler)
+	//	case "FinalHandler":
+	//
+	//		sm.AddHandler(fsm.Event(handler.Event), handlers.FinalHandler)
+	//	default:
+	//
+	//		log.Fatalf("Unknown handler: %s", handler.Handler)
+	//	}
+	//}
+	//
+	////sm.AddTransition(StateStart, "start", StateCity)
+	////sm.AddTransition(StateCity, "city", StateProduct)
+	////sm.AddTransition(StateProduct, "product", StateStart)
+	////
+	////sm.AddHandler("start", handlers.StartHandler)
+	////sm.AddHandler("city", handlers.CityHandler)
+	////sm.AddHandler("product", handlers.ProductHandler)
+	//b.FSM = sm
 
-		switch stateConfig.Handler {
-		case "startHandler":
-			sm.AddStateHandler(fsm.State(state), handlers.StartHandler)
-		case "cityHandler":
-			sm.AddStateHandler(fsm.State(state), handlers.CityHandler)
-		case "productHandler":
-			sm.AddStateHandler(fsm.State(state), handlers.ProductHandler)
-		case "quantityHandler":
-			sm.AddStateHandler(fsm.State(state), handlers.QuantityHandler)
-		case "paymentHandler":
-			sm.AddStateHandler(fsm.State(state), handlers.PaymentHandler)
-		case "endHandler":
-			sm.AddStateHandler(fsm.State(state), handlers.EndHandler)
-
-		}
-	}
-	b.FSM = sm
 	////////////////////////////////////////////////////////////////////////////////////////////////
 
 	bot, err := telego.NewBot(b.Config.Token)
 	if err != nil {
 		//TODO: need to handle the error differently without direct call to zap.String
-		b.Config.Logger.Fatal("failed create new bot api instance", zap.String("error", err.Error()))
+		b.Logger.Fatal("failed create new bot api instance", zap.String("error", err.Error()))
+
 	}
-	b.Config.API = bot
+	b.API = bot
 
 	//TODO: find better way to make channel
 	//TODO: also need to safly send updates to channel, checking is channel is open or closed
@@ -72,7 +108,7 @@ func (b *Bot) InitBot() {
 	b.UpdatesChan = make(chan telego.Update, b.UpdateChanBuffer)
 
 	//TODO: refer to SetWebhookParams to setup additional parameters (like certificate, pending updates, etc.)
-	_ = b.Config.API.SetWebhook(&telego.SetWebhookParams{
+	_ = bot.SetWebhook(&telego.SetWebhookParams{
 		URL: b.Config.WebhookLink + b.Config.WebhookPath,
 		AllowedUpdates: []string{
 			"message",
@@ -89,71 +125,139 @@ func (b *Bot) InitBot() {
 		},
 	})
 
-	info, _ := b.Config.API.GetWebhookInfo()
-	b.Config.Logger.Info("Webhook Info", zap.Any("info", info)) //TODO: in prod it needs to be in JSON format
+	info, _ := bot.GetWebhookInfo()
+	b.Logger.Info("Webhook Info", zap.Any("info", info)) //TODO: in prod it needs to be in JSON format
+
+	//TODO: TEMPORARY refactor code
+	cityMarkup, err := FetchCitiesFromDB(b.DB)
+	rules := []fsm.Rule{
+		{
+			Event:      "/start",
+			Conditions: []fsm.ConditionFunc{},
+			Actions: []fsm.ActionFunc{
+				handlers.SendMessageWithMarkup(bot, "Добрый день", map[string]string{
+					"Вакансии": "hire",
+				}),
+				handlers.SendMessageWithMarkup(bot, "Желаете оформить заказ?", map[string]string{
+					"Оформит": "order",
+				}),
+			},
+		},
+		{
+			Event:      "hire",
+			Conditions: []fsm.ConditionFunc{},
+			Actions:    []fsm.ActionFunc{handlers.EditMessage(bot, "Тут будет сообщение о открытых вакансиях")},
+		},
+		{
+			Event:      "order",
+			Conditions: []fsm.ConditionFunc{},
+			Actions: []fsm.ActionFunc{handlers.EditMessageWithMarkup(bot, "Пожалуйста выберите ваш город:",
+				cityMarkup),
+			},
+		},
+		{
+			Event:      "city",
+			Conditions: []fsm.ConditionFunc{},
+			Actions: []fsm.ActionFunc{handlers.EditMessageWithMarkup(bot, "Пожалуйста выберите интересующий вас товар:",
+				[]handlers.TempMarkup{
+					{Text: "Товар 1", CallbackData: "product"},
+					{Text: "Товар 2", CallbackData: "product"},
+				}),
+			},
+		},
+		{
+			Event:      "product",
+			Conditions: []fsm.ConditionFunc{},
+			Actions: []fsm.ActionFunc{handlers.EditMessageWithMarkup(bot, "Пожалуйста выберите интересующее вас количество:",
+				[]handlers.TempMarkup{
+					{Text: "Количество 1", CallbackData: "quantity"},
+					{Text: "Количество 2", CallbackData: "quantity"},
+				}),
+			},
+		},
+		//TODO: after choosing quantity, offer region where delivery is available
+		//TODO: add next rule to add to cart to shop for more items
+		{
+			Event:      "quantity",
+			Conditions: []fsm.ConditionFunc{},
+			Actions: []fsm.ActionFunc{handlers.EditMessageWithMarkup(bot, "Пожалуйста выберите метод оплаты:",
+				[]handlers.TempMarkup{
+					{Text: "Перевод на карту", CallbackData: "card"},
+					{Text: "Оплата Крипто валютой", CallbackData: "crypto"},
+				}),
+			},
+		},
+		{
+			Event:      "card",
+			Conditions: []fsm.ConditionFunc{},
+			Actions: []fsm.ActionFunc{handlers.EditMessageWithMarkup(bot, "Вы выбрали метод оплаты перевод на карту:",
+				[]handlers.TempMarkup{
+					{Text: "Оформить заказ", CallbackData: "confirm"},
+					{Text: "Отменить заказ", CallbackData: "cancel"},
+				}),
+			},
+		},
+		{
+			Event:      "crypto",
+			Conditions: []fsm.ConditionFunc{},
+			Actions: []fsm.ActionFunc{handlers.EditMessageWithMarkup(bot, "Вы выбрали метод оплаты крипто валютой:",
+				[]handlers.TempMarkup{
+					{Text: "Оформить заказ", CallbackData: "confirm"},
+					{Text: "Отменить заказ", CallbackData: "cancel"},
+				}),
+			},
+		},
+		//TODO: send order details to costumer
+		{
+			Event:      "confirm",
+			Conditions: []fsm.ConditionFunc{},
+			Actions:    []fsm.ActionFunc{handlers.EditMessage(bot, "Ваш заказ успешно оформлен")},
+		},
+		{
+			Event:      "cancel",
+			Conditions: []fsm.ConditionFunc{},
+			Actions:    []fsm.ActionFunc{handlers.EditMessage(bot, "Ваш заказ успешно отменен")},
+		},
+		{
+			Event:      "status",
+			Conditions: []fsm.ConditionFunc{}, //TODO: wait response from operator to confirm payment
+			Actions:    []fsm.ActionFunc{handlers.EditMessage(bot, "Тут будет сообщение о статусе заказа")},
+		},
+	}
+	// Initialize FSM
+	b.FSM = fsm.NewRuleBasedFSM(rules)
 
 }
 
 // TODO: name properly
 func (b *Bot) ReceiveUpdates() {
 
-	bh, _ := th.NewBotHandler(b.Config.API, b.UpdatesChan)
+	bh, _ := th.NewBotHandler(b.API, b.UpdatesChan)
 
 	bh.Stop()
 
-	// Register new handler with match on command `/start`
+	//Handling text messages
 	bh.Handle(func(bot *telego.Bot, update telego.Update) {
+		b.FSM.Context["update"] = update
 
-		event := fsm.Event{
-			Name: "start",
-			Payload: handlers.Payload{
-				Bot:    bot,
-				Update: update,
-			},
+		err := b.FSM.Trigger(fsm.Event(update.Message.Text))
+		if err != nil {
+			b.Logger.Error("Failed to trigger event", zap.String("error", err.Error()))
 		}
 
-		if err := handlers.StartHandler(event, b.FSM); err != nil {
-			b.Config.Logger.Error("Failed to handle start event", zap.String("error", err.Error()))
-		}
+	}, th.AnyCommand())
 
-	}, th.CommandEqual("start"))
-
-	// Register new handler with match on a call back query with data equal to `go` and non-nil message
+	//Handling callback queries
 	bh.HandleCallbackQuery(func(bot *telego.Bot, query telego.CallbackQuery) {
 
-		// Send message
-		_, _ = bot.SendMessage(tu.Message(tu.ID(query.Message.GetChat().ID), "GO"))
+		b.FSM.Context["message"] = query.Message
+		err := b.FSM.Trigger(fsm.Event(query.Data))
+		if err != nil {
+			b.Logger.Error("Failed to trigger callback event", zap.String("error", err.Error()))
+		}
 
-		// Answer callback query
-		_ = bot.AnswerCallbackQuery(tu.CallbackQuery(query.ID).WithText("Done"))
-	}, th.AnyCallbackQueryWithMessage(), th.CallbackDataEqual("go"))
+	}, th.AnyCallbackQuery())
 
 	bh.Start()
 
-	//// Define a context key
-	//type userID bool
-	//var userIDKey userID
-	//
-	//// Apply middleware that will retrieve user ID from update
-	//bh.Use(func(bot *telego.Bot, update telego.Update, next th.Handler) {
-	//	// Get initial context
-	//	ctx := update.Context()
-	//
-	//	if update.Message != nil && update.Message.From != nil {
-	//		// Set user ID in context
-	//		ctx = context.WithValue(ctx, userIDKey, update.Message.From.ID)
-	//	}
-	//
-	//	// Update context
-	//	update = update.WithContext(ctx)
-	//	next(bot, update)
-	//})
-	//
-	//// Handle messages
-	//bh.Handle(func(bot *telego.Bot, update telego.Update) {
-	//	ctx := update.Context()
-	//
-	//	// Retrieve user ID from context
-	//	fmt.Println("User ID:", ctx.Value(userIDKey))
-	//}, th.AnyMessage())
 }

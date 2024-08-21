@@ -1,37 +1,51 @@
-
-
-#bot states
-initial_state: "start"
-
 states:
-  start:
-    handler: "startHandler"
+  - name: start
     transitions:
-      chose_state: "city"
-
-  city:
-    handler: "cityHandler"
+      - event: "start"
+        to: "order"
+  - name: order
     transitions:
-      chose_state: "product"
-
-  product:
-    handler: "productHandler"
+      - event: "order"
+        to: "city"
+  - name: city
     transitions:
-      chose_state: "quantity"
-
-  quantity:
-    handler: "quantityHandler"
+      - event: "city"
+        to: "product"
+  - name: product
     transitions:
-      chose_state: "payment"
-
-  payment:
-    handler: "paymentHandler"
+      - event: "product"
+        to: "quantity"
+  - name: quantity
     transitions:
-      chose_state: "end"
-
-  end:
-    handler: "endHandler"
+      - event: "quantity"
+        to: "payment"
+  - name: payment
     transitions:
-      chose_state: "start"
+      - event: "payment"
+        to: "conformation"
+  - name: conformation
+    transitions:
+      - event: "conformation"
+        to: "final"
+  - name: final
+    transitions:
+      - event: "final"
+        to: "start"
 
-
+handlers:
+  - event: "start"
+    handler: "StartHandler"
+  - event: "order"
+    handler: "OrderHandler"
+  - event: "city"
+    handler: "CityHandler"
+  - event: "product"
+    handler: "ProductHandler"
+  - event: "quantity"
+    handler: "QuantityHandler"
+  - event: "payment"
+    handler: "PaymentHandler"
+  - event: "conformation"
+    handler: "ConformationHandler"
+  - event: "final"
+    handler: "FinalHandler"
