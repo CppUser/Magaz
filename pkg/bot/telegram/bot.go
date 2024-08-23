@@ -2,6 +2,7 @@ package telegram
 
 import (
 	"Magaz/internal/config"
+	"Magaz/internal/storage/crud"
 	tgconfig "Magaz/pkg/bot/telegram/config"
 	"Magaz/pkg/bot/telegram/handlers"
 	"Magaz/pkg/utils/state/fsm"
@@ -10,6 +11,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
+	"strings"
 )
 
 // TODO: Remove load from config .
@@ -129,7 +131,6 @@ func (b *Bot) InitBot() {
 	b.Logger.Info("Webhook Info", zap.Any("info", info)) //TODO: in prod it needs to be in JSON format
 
 	//TODO: TEMPORARY refactor code
-	cityMarkup, err := FetchCitiesFromDB(b.DB)
 	rules := []fsm.Rule{
 		{
 			Event:      "/start",
@@ -151,28 +152,72 @@ func (b *Bot) InitBot() {
 		{
 			Event:      "order",
 			Conditions: []fsm.ConditionFunc{},
-			Actions: []fsm.ActionFunc{handlers.EditMessageWithMarkup(bot, "Пожалуйста выберите ваш город:",
-				cityMarkup),
+			Actions: []fsm.ActionFunc{
+				func(context map[string]interface{}) error {
+					// Fetch cities from the database
+					cities, err := crud.GetAllCities(b.DB)
+					if err != nil {
+						return err
+					}
+
+					// Generate city markup
+					cityMarkup := make([]handlers.TempMarkup, len(cities))
+					for i, city := range cities {
+						cityMarkup[i] = handlers.TempMarkup{
+							Text:         city.Name,
+							CallbackData: "city:" + city.Name, // Pass city name in the callback data
+						}
+					}
+
+					// Prompt the user to select a city
+					return handlers.EditMessageWithMarkup(bot, "Пожалуйста выберите ваш город:", cityMarkup)(context)
+				},
 			},
 		},
 		{
 			Event:      "city",
 			Conditions: []fsm.ConditionFunc{},
-			Actions: []fsm.ActionFunc{handlers.EditMessageWithMarkup(bot, "Пожалуйста выберите интересующий вас товар:",
-				[]handlers.TempMarkup{
-					{Text: "Товар 1", CallbackData: "product"},
-					{Text: "Товар 2", CallbackData: "product"},
-				}),
+			Actions: []fsm.ActionFunc{
+				func(context map[string]interface{}) error {
+					// Extract the city name from the callback data
+					callbackData := context["callbackData"].(string)
+					cityName := strings.TrimPrefix(callbackData, "city:")
+
+					update := context["message"].(*telego.Message)
+					StoreUserChoice(b.Cache, update.From.ID, "city", cityName)
+
+					// Generate product markup for the selected city
+					productMarkup, err := GenerateProductMarkup(b.DB, cityName)
+					if err != nil {
+						return err
+					}
+
+					// Prompt the user to select a product
+					return handlers.EditMessageWithMarkup(bot, "Пожалуйста выберите интересующий вас товар:", productMarkup)(context)
+				},
 			},
 		},
 		{
 			Event:      "product",
 			Conditions: []fsm.ConditionFunc{},
-			Actions: []fsm.ActionFunc{handlers.EditMessageWithMarkup(bot, "Пожалуйста выберите интересующее вас количество:",
-				[]handlers.TempMarkup{
-					{Text: "Количество 1", CallbackData: "quantity"},
-					{Text: "Количество 2", CallbackData: "quantity"},
-				}),
+			Actions: []fsm.ActionFunc{
+				func(context map[string]interface{}) error {
+					// Extract the product name from the context
+					callbackData := context["callbackData"].(string)
+					productName := strings.TrimPrefix(callbackData, "product:")
+
+					update := context["message"].(*telego.Message)
+					StoreUserChoice(b.Cache, update.From.ID, "product", productName)
+
+					// Generate quantity markup for the selected product
+					quantityMarkup, err := GenerateProductPriceMarkup(b.DB, productName)
+					if err != nil {
+						return err
+					}
+
+					// Prompt the user to select a quantity
+					return handlers.EditMessageWithMarkup(bot, "Пожалуйста выберите интересующее вас количество:", quantityMarkup)(context)
+				},
 			},
 		},
 		//TODO: after choosing quantity, offer region where delivery is available
@@ -211,7 +256,20 @@ func (b *Bot) InitBot() {
 		{
 			Event:      "confirm",
 			Conditions: []fsm.ConditionFunc{},
-			Actions:    []fsm.ActionFunc{handlers.EditMessage(bot, "Ваш заказ успешно оформлен")},
+			Actions: []fsm.ActionFunc{
+				func(context map[string]interface{}) error {
+					update := context["message"].(*telego.Message)
+
+					choices, err := GetUserChoices(b.Cache, update.From.ID)
+					if err != nil {
+						return err
+					}
+					b.Logger.Info("User choices", zap.Any("choices", choices))
+
+					// Prompt the user to select a quantity
+					return handlers.EditMessage(bot, "Ваш заказ офопмлен")(context)
+				},
+			},
 		},
 		{
 			Event:      "cancel",
@@ -249,11 +307,21 @@ func (b *Bot) ReceiveUpdates() {
 
 	//Handling callback queries
 	bh.HandleCallbackQuery(func(bot *telego.Bot, query telego.CallbackQuery) {
-
 		b.FSM.Context["message"] = query.Message
-		err := b.FSM.Trigger(fsm.Event(query.Data))
-		if err != nil {
-			b.Logger.Error("Failed to trigger callback event", zap.String("error", err.Error()))
+		b.FSM.Context["callbackData"] = query.Data
+
+		dataParts := strings.Split(query.Data, ":")
+		if len(dataParts) > 1 {
+			err := b.FSM.Trigger(fsm.Event(dataParts[0]))
+			if err != nil {
+				b.Logger.Error("Failed to trigger callback event", zap.String("error", err.Error()))
+			}
+
+		} else {
+			err := b.FSM.Trigger(fsm.Event(query.Data))
+			if err != nil {
+				b.Logger.Error("Failed to trigger callback event", zap.String("error", err.Error()))
+			}
 		}
 
 	}, th.AnyCallbackQuery())

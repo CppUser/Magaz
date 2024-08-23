@@ -6,6 +6,7 @@ import (
 	"net/http"
 )
 
+// BotRequestHandler handles the incoming requests from the Telegram bot
 func (h *Handler) BotRequestHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var update telego.Update

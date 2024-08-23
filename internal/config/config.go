@@ -16,6 +16,8 @@ type APIConfig struct {
 	Redis    RedisConfig    `mapstructure:"redis"`
 	Database DatabaseConfig `mapstructure:"database"`
 	Bot      TGBotConfig    `mapstructure:"tg_bot"`
+	CacheDir TemplateCache  `mapstructure:"cache_dir"`
+	ScrKey   string         `mapstructure:"scr_key"`
 }
 
 // RedisConfig holds the Redis configuration.
@@ -47,6 +49,11 @@ type ServerConfig struct {
 	Port          string        `mapstructure:"port"`
 	TimeoutMS     time.Duration `mapstructure:"timeout_ms"`
 	IdleTimeoutMS time.Duration `mapstructure:"idle_timeout_ms"`
+}
+
+type TemplateCache struct {
+	Layouts string `mapstructure:"layouts"`
+	Pages   string `mapstructure:"pages"`
 }
 
 // TODO: Move to bot config logic

@@ -5,6 +5,7 @@ import (
 	"Magaz/internal/handler"
 	"Magaz/internal/router"
 	"Magaz/internal/storage/models"
+	"Magaz/internal/utils"
 	"Magaz/pkg/bot/telegram"
 	"Magaz/pkg/client/postgres"
 	"Magaz/pkg/client/redis"
@@ -13,6 +14,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/sessions"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 	"log"
@@ -47,8 +49,8 @@ func main() {
 	///////////////////////////////////////////////////////////////////////////////
 	// Migrate the database models
 	//_ = migrateDatabase(db)
-	//
-	//// Populate the database
+
+	// Populate the database
 	//err = populateDatabase(db)
 	//if err != nil {
 	//	fmt.Println("Failed to populate the database:", err)
@@ -60,7 +62,15 @@ func main() {
 	//	zaplog.Fatal("Failed to migrate database schema", zap.Error(err))
 	//}
 
-	////TODO: Initialize Sessions
+	sessionKey := cfg.ScrKey
+	if sessionKey == "" {
+		sessionKey, err = utils.GenerateRandomKey(32)
+		if err != nil {
+			zaplog.Fatal("Failed to generate session key", zap.Error(err))
+		}
+	}
+	// Initialize the session store with the retrieved or generated session key
+	store := sessions.NewCookieStore([]byte(sessionKey))
 
 	//TODO: passing to handler initialized clients like redis and db . Pass handler instead ?
 	bot := telegram.Bot{
@@ -72,12 +82,19 @@ func main() {
 	}
 	bot.InitBot()
 
+	tempalteCache, err := handler.CreateTemplateCache(cfg.CacheDir.Layouts, cfg.CacheDir.Pages)
+	if err != nil {
+		zaplog.Fatal("Failed to create template cache", zap.Error(err))
+	}
+
 	h := handler.Handler{
-		Api:    cfg,
-		Logger: zaplog,
-		Bot:    &bot,
-		Redis:  rdb,
-		DB:     db,
+		Api:       cfg,
+		Logger:    zaplog,
+		Bot:       &bot,
+		Redis:     rdb,
+		DB:        db,
+		TmplCache: tempalteCache,
+		Session:   store,
 	}
 	//handler.NewHandler(h)
 
@@ -111,12 +128,6 @@ func main() {
 	if err := server.Shutdown(ctx); err != nil {
 		zaplog.Fatal("Server forced to shutdown:", zap.Error(err))
 	}
-
-	////TODO: build host and port from config and call single function
-	//err = rh.Run(cfg.Server.Host + ":" + cfg.Server.Port)
-	//if err != nil {
-	//	cfg.Logger.Fatal("Failed to start server", zap.String("error", err.Error()))
-	//}
 
 }
 

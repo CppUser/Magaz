@@ -118,6 +118,22 @@ func EditMessageWithMarkup(bot *telego.Bot, text string, markup []TempMarkup) fs
 	}
 }
 
+func EditMessageWithOrderDetails(bot *telego.Bot, text string, markup []TempMarkup) fsm.ActionFunc {
+	return func(context map[string]interface{}) error {
+		update := context["message"].(*telego.Message)
+
+		//
+
+		// Edit the message
+		_, err := bot.EditMessageText(&telego.EditMessageTextParams{
+			ChatID:    tu.ID(update.GetChat().ID),
+			MessageID: update.GetMessageID(),
+			Text:      text,
+		})
+		return err
+	}
+}
+
 //
 //type Payload struct {
 //	Bot      *telego.Bot
