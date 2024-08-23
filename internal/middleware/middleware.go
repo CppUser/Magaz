@@ -5,6 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/sessions"
 	"net/http"
+	"time"
 )
 
 func LogDetailedRequestsMiddleware() gin.HandlerFunc {
@@ -22,6 +23,16 @@ func SessionMiddleware(store *sessions.CookieStore) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Create or retrieve the session
 		session, err := store.Get(c.Request, "session-name")
+
+		// Set session options for persistent cookies
+		expiration := time.Now().Add(24 * time.Hour)
+		session.Options = &sessions.Options{
+			Path:     "/",
+			MaxAge:   int(expiration.Sub(time.Now()).Seconds()),
+			HttpOnly: true,
+			Secure:   true,
+			SameSite: http.SameSiteStrictMode,
+		}
 		if err != nil {
 			c.AbortWithError(500, err)
 			return
