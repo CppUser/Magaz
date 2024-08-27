@@ -6,7 +6,6 @@ import (
 	"Magaz/internal/router"
 	"Magaz/internal/storage/models"
 	"Magaz/internal/utils"
-	"Magaz/pkg/bot/telegram"
 	"Magaz/pkg/client/postgres"
 	"Magaz/pkg/client/redis"
 	"Magaz/pkg/utils/logger"
@@ -73,14 +72,14 @@ func main() {
 	store := sessions.NewCookieStore([]byte(sessionKey))
 
 	//TODO: passing to handler initialized clients like redis and db . Pass handler instead ?
-	bot := telegram.Bot{
-		Config:           &cfg.Bot,
-		Logger:           zaplog,
-		UpdateChanBuffer: 128, // Buffer size is 128 default
-		Cache:            rdb,
-		DB:               db,
-	}
-	bot.InitBot()
+	//bot := telegram.Bot{
+	//	Config:           &cfg.Bot,
+	//	Logger:           zaplog,
+	//	UpdateChanBuffer: 128, // Buffer size is 128 default
+	//	Cache:            rdb,
+	//	DB:               db,
+	//}
+	//bot.InitBot()
 
 	tempalteCache, err := handler.CreateTemplateCache(cfg.CacheDir.Layouts, cfg.CacheDir.Pages)
 	if err != nil {
@@ -88,9 +87,9 @@ func main() {
 	}
 
 	h := handler.Handler{
-		Api:       cfg,
-		Logger:    zaplog,
-		Bot:       &bot,
+		Api:    cfg,
+		Logger: zaplog,
+		//Bot:       &bot,
 		Redis:     rdb,
 		DB:        db,
 		TmplCache: tempalteCache,
@@ -100,7 +99,7 @@ func main() {
 
 	rh := router.SetupRouter(&h)
 
-	go bot.ReceiveUpdates() //TODO: no the best approach find other way to handle updates
+	//go bot.ReceiveUpdates() //TODO: no the best approach find other way to handle updates
 
 	server := &http.Server{
 		Addr:    cfg.Server.Host + ":" + cfg.Server.Port,

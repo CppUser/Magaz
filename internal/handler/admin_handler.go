@@ -46,3 +46,11 @@ func (h *Handler) AdminHandler() gin.HandlerFunc {
 
 	}
 }
+
+func (h *Handler) AdminHandlerTest() gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		c.HTML(200, "admin.html", nil)
+
+	}
+}

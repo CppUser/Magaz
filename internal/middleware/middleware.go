@@ -18,6 +18,7 @@ func LogDetailedRequestsMiddleware() gin.HandlerFunc {
 	}
 }
 
+// TODO: Pass Handler instead ?
 // SessionMiddleware returns a Gin middleware function that manages sessions
 func SessionMiddleware(store *sessions.CookieStore) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -30,7 +31,7 @@ func SessionMiddleware(store *sessions.CookieStore) gin.HandlerFunc {
 			Path:     "/",
 			MaxAge:   int(expiration.Sub(time.Now()).Seconds()),
 			HttpOnly: true,
-			Secure:   true,
+			Secure:   false, //TODO: set to true in production
 			SameSite: http.SameSiteStrictMode,
 		}
 		if err != nil {

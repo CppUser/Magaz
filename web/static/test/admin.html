@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Users</title>
+    <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/css/sidebars.css">
+    <meta name="theme-color" content="#712cf9">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css">
+
+</head>
+<body>
+
+<div id="sidebar" class="sidebar bg-body-tertiary d-flex flex-column flex-shrink-0 p-3" data-bs-theme="dark">
+    <div class="sidebar-toggler d-flex align-items-center mb-3 mb-md-0 me-md-auto link-body-emphasis text-decoration-none">
+        <svg class="bi pe-none me-2" width="40" height="32"><use xlink:href="bootstrap-icons.svg#bootstrap"></use></svg>
+        <span class="fs-4">Sidebar</span>
+    </div>
+    <hr>
+    <ul class="nav nav-pills flex-column mb-auto">
+        <li class="nav-item sidebar-item">
+            <a href="#" class="nav-link active" aria-current="page">
+                <svg class="bi pe-none me-2" width="16" height="16"><use xlink:href="bootstrap-icons.svg#house"></use></svg>
+                <span>Home</span>
+            </a>
+        </li>
+        <li class="sidebar-item">
+            <a href="#" class="nav-link link-body-emphasis">
+                <svg class="bi pe-none me-2" width="16" height="16"><use xlink:href="bootstrap-icons.svg#speedometer2"></use></svg>
+                <span>Dashboard</span>
+            </a>
+        </li>
+        <!-- Add other items similarly -->
+    </ul>
+    <hr>
+    <div class="dropdown sidebar-item">
+        <a href="#" class="d-flex align-items-center link-body-emphasis text-decoration-none dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+            <img src="https://github.com/mdo.png" alt="" class="me-2">
+            <span>mdo</span>
+        </a>
+        <ul class="dropdown-menu text-small shadow">
+            <!-- Add dropdown items here -->
+        </ul>
+    </div>
+</div>
+<div class="content">
+
+</div>
+
+<script src="/static/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.querySelector('.sidebar-toggler').addEventListener('click', function() {
+        document.getElementById('sidebar').classList.toggle('collapsed');
+    });
+</script>
+</body>
+</html>

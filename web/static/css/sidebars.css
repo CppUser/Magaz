@@ -1,0 +1,57 @@
+/* Custom styles for the sidebar */
+.sidebar {
+    width: 280px;
+    transition: all 0.3s;
+}
+
+.sidebar.collapsed {
+    width: 80px;
+}
+
+.sidebar .sidebar-item {
+    white-space: nowrap;
+    overflow: hidden;
+    transition: all 0.3s;
+}
+
+.sidebar.collapsed .sidebar-item span {
+    display: none;
+}
+
+.sidebar.collapsed .sidebar-item svg {
+    margin-right: 0;
+}
+
+.sidebar .sidebar-toggler span {
+    display: inline;
+}
+
+.sidebar.collapsed .sidebar-toggler span {
+    display: none;
+}
+
+.sidebar.collapsed .sidebar-toggler {
+    justify-content: center;
+}
+
+.sidebar-toggler {
+    cursor: pointer;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+}
+
+.sidebar img {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    transition: all 0.3s;
+}
+
+.sidebar.collapsed img {
+    margin: 0 auto;
+}
+
+.sidebar .dropdown-toggle::after {
+    display: none;
+}
