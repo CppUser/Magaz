@@ -10,7 +10,7 @@ services:
     ports:
       - "6379:6379"
     volumes:
-      - ./storage/redis:/data  # Bind mount for Redis data storage
+      - ./backend/storage/redis:/data  # Bind mount for Redis data storage
     restart: always
     networks:
         - magaz_network
@@ -25,7 +25,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - ./storage/postgres:/var/lib/postgresql/data  # Bind mount for PostgreSQL data storage
+      - ./backend/storage/postgres:/var/lib/postgresql/data  # Bind mount for PostgreSQL data storage
     restart: always
     networks:
       - magaz_network
@@ -33,7 +33,7 @@ services:
   api:
     build:
       context: .
-      dockerfile: cmd/api/Dockerfile
+      dockerfile: backend/cmd/api/Dockerfile
     container_name: magaz_api
     ports:
       - "8080:8080"
