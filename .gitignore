@@ -1,2 +1,11 @@
 .idea/
 *.yaml
+.vs/
+/backend/storage
+
+# bootstrap files
+/frontend/static/css/bootstrap
+/frontend/static/fonts/bootstrap
+/frontend/static/images/bootstrap
+/frontend/static/js/bootstrap
+

@@ -11,7 +11,6 @@ import (
 	"Magaz/backend/pkg/utils/logger"
 	"context"
 	"errors"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/sessions"
 	"go.uber.org/zap"
@@ -47,10 +46,9 @@ func main() {
 
 	///////////////////////////////////////////////////////////////////////////////
 	// Migrate the database models
-	//_ = migrateDatabase(db)
+	_ = migrateDatabase(db)
 
-	// Populate the database
-	//err = populateDatabase(db)
+	//err = PopulateData(db)
 	//if err != nil {
 	//	fmt.Println("Failed to populate the database:", err)
 	//} else {
@@ -133,145 +131,73 @@ func main() {
 // Migrate the database models
 func migrateDatabase(db *gorm.DB) error {
 	return db.AutoMigrate(
-		&models.User{},
+		//&models.User{},
 		&models.City{},
-		&models.Area{},
 		&models.Product{},
 		&models.ProductPrice{},
-		&models.AreaProduct{},
 		&models.CityProduct{},
+		&models.Item{},
 	)
 }
 
-func populateDatabase(db *gorm.DB) error {
-	// Define products with prices
-	apple := models.Product{
-		Name:        "Apple",
-		Description: "Fresh red apples",
-		ProductPrices: []models.ProductPrice{
-			{Quantity: 1, Price: 2.00},
-			{Quantity: 2, Price: 3.00},
-			{Quantity: 3, Price: 4.00},
-			{Quantity: 4, Price: 5.00},
-			{Quantity: 5, Price: 6.00},
-		},
-	}
+func PopulateData(db *gorm.DB) error {
+	// Sample Cities
+	newYork := models.City{Name: "New York"}
+	chicago := models.City{Name: "Chicago"}
 
-	orange := models.Product{
-		Name:        "Orange",
-		Description: "Juicy oranges",
-		ProductPrices: []models.ProductPrice{
-			{Quantity: 1, Price: 1.50},
-			{Quantity: 2, Price: 2.50},
-			{Quantity: 3, Price: 3.50},
-			{Quantity: 4, Price: 4.50},
-			{Quantity: 5, Price: 5.50},
-		},
-	}
-
-	banana := models.Product{
-		Name:        "Banana",
-		Description: "Fresh bananas",
-		ProductPrices: []models.ProductPrice{
-			{Quantity: 1, Price: 1.20},
-			{Quantity: 2, Price: 2.20},
-			{Quantity: 3, Price: 3.20},
-			{Quantity: 4, Price: 4.20},
-			{Quantity: 5, Price: 5.20},
-		},
-	}
-
-	// Define Jacksonville with its areas and products
-	jacksonville := models.City{
-		Name: "Jacksonville",
-		Products: []models.Product{
-			apple, // City-wide available product
-			orange,
-		},
-		Areas: []models.Area{
-			{
-				Name: "Saint Johns Town Center",
-				Products: []models.Product{
-					apple,
-				},
-			},
-			{
-				Name: "Mandarin",
-				Products: []models.Product{
-					orange,
-				},
-			},
-			{
-				Name: "Orange Park",
-				Products: []models.Product{
-					orange,
-				},
-			},
-		},
-	}
-
-	// Define Chicago with its areas and products
-	chicago := models.City{
-		Name: "Chicago",
-		Products: []models.Product{
-			banana,
-			apple,
-		},
-		Areas: []models.Area{
-			{
-				Name: "Downtown",
-				Products: []models.Product{
-					banana,
-					apple,
-				},
-			},
-			{
-				Name: "Lincoln Park",
-				Products: []models.Product{
-					banana,
-				},
-			},
-		},
-	}
-
-	// Define New York with its areas and products
-	newYork := models.City{
-		Name: "New York",
-		Products: []models.Product{
-			apple,
-			orange,
-			banana,
-		},
-		Areas: []models.Area{
-			{
-				Name: "Manhattan",
-				Products: []models.Product{
-					apple,
-					orange,
-				},
-			},
-			{
-				Name: "Brooklyn",
-				Products: []models.Product{
-					banana,
-					orange,
-				},
-			},
-			{
-				Name: "Queens",
-				Products: []models.Product{
-					apple,
-					banana,
-				},
-			},
-		},
-	}
-
-	// Add the cities with their areas, products, and product prices to the database
-	db.Create(&jacksonville)
-	db.Create(&chicago)
+	// Insert Cities into the database
 	db.Create(&newYork)
+	db.Create(&chicago)
 
-	fmt.Println("Database populated successfully with cities, areas, products, and product prices.")
+	// Sample Products
+	apples := models.Product{
+		Name:        "Apples",
+		Description: "Fresh apples",
+		Image:       "apples.jpg",
+	}
+	bananas := models.Product{
+		Name:        "Bananas",
+		Description: "Ripe bananas",
+		Image:       "bananas.jpg",
+	}
+
+	// Insert Products into the database
+	db.Create(&apples)
+	db.Create(&bananas)
+
+	// Sample CityProducts with Prices and Quantities
+	nyApples := models.CityProduct{
+		CityID:        newYork.ID,
+		ProductID:     apples.ID,
+		TotalQuantity: 300, // 300kg of apples in New York
+		ProductPrices: []models.ProductPrice{
+			{Quantity: 1, Price: 10}, // $10 per kg
+			{Quantity: 5, Price: 45}, // $45 per 5kg
+		},
+	}
+	nyBananas := models.CityProduct{
+		CityID:        newYork.ID,
+		ProductID:     bananas.ID,
+		TotalQuantity: 200, // 200kg of bananas in New York
+		ProductPrices: []models.ProductPrice{
+			{Quantity: 1, Price: 3},  // $3 per kg
+			{Quantity: 5, Price: 14}, // $14 per 5kg
+		},
+	}
+	chiApples := models.CityProduct{
+		CityID:        chicago.ID,
+		ProductID:     apples.ID,
+		TotalQuantity: 100, // 100kg of apples in Chicago
+		ProductPrices: []models.ProductPrice{
+			{Quantity: 1, Price: 22},  // $22 per kg
+			{Quantity: 5, Price: 100}, // $100 per 5kg
+		},
+	}
+
+	// Insert CityProducts with associated ProductPrices into the database
+	db.Create(&nyApples)
+	db.Create(&nyBananas)
+	db.Create(&chiApples)
+
 	return nil
 }

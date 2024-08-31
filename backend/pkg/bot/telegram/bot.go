@@ -38,7 +38,7 @@ type Bot struct {
 func (b *Bot) InitBot() {
 
 	//TODO: need to handle error properly, currently removed do to code complaint
-	_, _ = tgconfig.LoadConfig("bot_config", "yaml", []string{".", "config/"})
+	_, _ = tgconfig.LoadConfig("bot_config", "yaml", []string{".", "backend/config/"})
 	//if err != nil {
 	//	b.Config.Logger.Fatal("Failed to load bot configs", zap.String("error", err.Error()))
 	//}

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ru">
+<html lang="ru" xmlns="http://www.w3.org/1999/html">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -7,179 +7,101 @@
     <link rel="stylesheet" href="static/css/bootstrap/bootstrap.min.css">
     <link rel="stylesheet" href="static/css/bootstrap/bootstrap-icons.css">
     <link rel="icon" href="static/images/bootstrap/icons/bootstrap-icons.svg">
+    <link rel="stylesheet" href="static/css/root.css">
     <link rel="stylesheet" href="static/css/sidebar.css">
     <link rel="stylesheet" href="static/css/order.css">
 </head>
-<body >
-    <main class="d-flex flex-nowrap">
-
-
-        <div class="d-flex flex-column flex-shrink-0 p-3 bg-body-tertiary" style="width: 280px;">
+<body>
+<main class="d-flex flex-nowrap">
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
+        <div class="container-fluid">
             <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto link-body-emphasis text-decoration-none">
                 <svg class="bi pe-none me-2" width="40" height="32"><use xlink:href="#bootstrap"></use></svg>
                 <span class="fs-4">Имя сотрудника</span>
             </a>
-            <hr>
-            <ul class="nav nav-pills flex-column mb-auto">
-                <li>
-                    <a href="#" class="nav-link link-body-emphasis">
-                        <svg class="bi pe-none me-2" width="16" height="16"><use xlink:href="#table"></use></svg>
-                        Заказы
-                    </a>
-                </li>
+            <!-- Empty space to align items to the right -->
+            <div class="me-auto"></div>
 
-                <li>
-                    <a href="#" class="nav-link link-body-emphasis">
-                        <svg class="bi pe-none me-2" width="16" height="16"><use xlink:href="#table"></use></svg>
-                        Выполненые Заказы
-                    </a>
-                </li>
-            </ul>
-            <hr>
+            <!-- Bell Icon -->
+            <button class="btn btn-link" type="button">
+                <i class="bi bi-bell" style="font-size: 1.5rem;"></i> <!-- Bootstrap bell icon -->
+            </button>
         </div>
+    </nav>
+    <!-- Sidebar -->
+    <div class="sidebar d-flex flex-column flex-shrink-0 p-3 bg-body-tertiary" style="margin-top: 56px;">
+        <hr>
+        <ul class="nav nav-pills flex-column mb-auto">
+            <li>
+                <a href="#" class="nav-link link-body-emphasis" onclick="showSection('orders'); return false;">
+                    <svg class="bi pe-none me-2" width="16" height="16"><use xlink:href="#table"></use></svg>
+                    Заказы
+                </a>
+            </li>
+            <li>
+                <a href="#" class="nav-link link-body-emphasis" onclick="showSection('disputes'); return false;">
+                    <svg class="bi pe-none me-2" width="16" height="16"><use xlink:href="#messenger"></use></svg>
+                    Диспуты
+                </a>
+            </li>
+        </ul>
+        <hr>
+    </div>
+    <!-- Content Area -->
+    <div class="content-area bg-body-tertiary " >
+        <!-- Orders Content -->
+        <div id="orders" class="content-section table-responsive" style="display: block;">
+            <h2>Заказы</h2>
+            <table class="table-primary " >
+                <thead>
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">Продукт</th>
+                    <th scope="col">Количество</th>
+                    <th scope="col">К оплате</th>
+                    <th scope="col">Создан</th>
+                    <th scope="col">Статус</th>
+                </tr>
+                </thead>
 
-<!--        ORDER TABLE-->
-        <div class="order-area d-flex flex-column flex-shrink-0 p-3 bg-body-tertiary">
-        <table>
-            <thead>
-            <tr>
-                <th>Order#</th>
-                <th>Product</th>
-                <th>Quantity</th>
-                <th>Due</th>
-                <th>Created At</th>
-                <th>Status</th>
-            </tr>
-            </thead>
-
-            <tbody>
-            <tr onclick="toggleOrderDetails(1)">
-                <td>1</td>
-                <td>Apple</td>
-                <td>10kg</td>
-                <td>$50</td>
-                <td>Aug 27 2024 10:25pm</td>
-                <td>Not Paid</td>
-            </tr>
-            <tr onclick="toggleOrderDetails(2)">
-                <td>2</td>
-                <td>Banana</td>
-                <td>2kg</td>
-                <td>$15</td>
-                <td>Aug 27 2024 10:30pm</td>
-                <td>PAID</td>
-            </tr>
-            <tr onclick="toggleOrderDetails(3)">
-                <td>3</td>
-                <td>Orange</td>
-                <td>5kg</td>
-                <td>$25</td>
-                <td>Aug 27 2024 10:45pm</td>
-                <td>Not Paid</td>
-            </tr>
-            <tr onclick="toggleOrderDetails(4)">
-                <td>4</td>
-                <td>Mango</td>
-                <td>3kg</td>
-                <td>$20</td>
-                <td>Aug 27 2024 11:00pm</td>
-                <td>PAID</td>
-            </tr>
-            <tr onclick="toggleOrderDetails(5)">
-                <td>5</td>
-                <td>Grapes</td>
-                <td>4kg</td>
-                <td>$18</td>
-                <td>Aug 27 2024 11:15pm</td>
-                <td>Not Paid</td>
-            </tr>
-            </tbody>
-
-        </table>
+                <tbody class="table-group-divider">
+                <tr onclick="toggleOrderDetails(1,this)">
+                    <td>1</td>
+                    <td>Apple</td>
+                    <td>10kg</td>
+                    <td>$50</td>
+                    <td>Aug 27 2024 10:25pm</td>
+                    <td>Not Paid</td>
+                </tr>
+                <tr onclick="toggleOrderDetails(2,this)">
+                    <td>2</td>
+                    <td>Banana</td>
+                    <td>2kg</td>
+                    <td>$15</td>
+                    <td>Aug 27 2024 10:30pm</td>
+                    <td>PAID</td>
+                </tr>
+                <!-- More rows as needed -->
+                </tbody>
+            </table>
         </div>
-
-        <!-- Side Window for Order Details -->
-        <div id="side-window" class="side-window">
-            <span class="close-btn" onclick="closeSideWindow()">×</span>
-            <div id="order-details">
-                <!-- Order details will be dynamically loaded here -->
-            </div>
+        <!-- Disputes Content -->
+        <div id="disputes" class="content-section" style="display: none;">
+            <h2>Disputes</h2>
+            <p>Details about disputes will go here.</p>
         </div>
+    </div>
+    <!-- Side Window for Order Details -->
+    <div id="side-window" class="side-window">
+        <span class="close-btn" onclick="closeSideWindow()">×</span>
+        <div id="order-details">
+            <!-- Order details will be dynamically loaded here -->
+        </div>
+    </div>
+</main>
+<script src="static/js/bootstrap/bootstrap.bundle.min.js"></script>
+<script src="static/js/orderdetails.js"></script>
 
-        <!--   ORDER TABLE     </div>-->
-
-
-    </main>
-    <script src="static/js/bootstrap/bootstrap.min.js"></script>
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            fetch("static/images/bootstrap/icons/bootstrap-icons.svg")
-                .then(response => response.text())
-                .then(svg => {
-                    const div = document.createElement("div");
-                    div.style.display = "none";
-                    div.innerHTML = svg;
-                    document.body.insertBefore(div, document.body.childNodes[0]);
-                });
-        });
-    </script>
-    <script>
-    (() => {
-        'use strict'
-        const tooltipTriggerList = Array.from(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-        tooltipTriggerList.forEach(tooltipTriggerEl => {
-            new bootstrap.Tooltip(tooltipTriggerEl)
-        })
-    })()
-</script>
-
-    <script>
-        // JavaScript to handle opening and closing the side window
-        let currentOpenOrderId = null;
-
-        function toggleOrderDetails(orderId) {
-            const sideWindow = document.getElementById('side-window');
-
-            if (currentOpenOrderId === orderId && sideWindow.classList.contains('open')) {
-                closeSideWindow(); // Close if same order is clicked again
-            } else {
-                showOrderDetails(orderId); // Show if a different order is clicked
-                currentOpenOrderId = orderId; // Update current open order
-            }
-        }
-
-        function showOrderDetails(orderId) {
-            // Example of fetching order details; replace with actual fetch logic
-            let orderDetails = '';
-            if (orderId === 1) {
-                orderDetails = `
-                    <h2>Order #1 Details</h2>
-                    <p>Product: Apple</p>
-                    <p>Quantity: 10kg</p>
-                    <p>Due: $50</p>
-                    <p>Created At: Aug 27 2024 10:25pm</p>
-                    <p>Status: Not Paid</p>
-                `;
-            } else if (orderId === 2) {
-                orderDetails = `
-                    <h2>Order #2 Details</h2>
-                    <p>Product: Banana</p>
-                    <p>Quantity: 2kg</p>
-                    <p>Due: $15</p>
-                    <p>Created At: Aug 27 2024 10:30pm</p>
-                    <p>Status: PAID</p>
-                `;
-            }
-            // Add similar structure for other orders
-
-            document.getElementById('order-details').innerHTML = orderDetails;
-            document.getElementById('side-window').classList.add('open');
-        }
-
-        function closeSideWindow() {
-            document.getElementById('side-window').classList.remove('open');
-            currentOpenOrderId = null; // Reset the current open order
-        }
-    </script>
 </body>
 </html>

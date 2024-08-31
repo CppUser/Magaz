@@ -70,7 +70,7 @@ func LoadConfig() (*APIConfig, error) {
 
 	configPaths := []string{
 		".",
-		"config/",
+		"backend/config/",
 	}
 
 	if err := parser.Load("api_config", "yaml", configPaths, &cfg); err != nil {

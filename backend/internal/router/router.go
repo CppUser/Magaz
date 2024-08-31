@@ -8,7 +8,7 @@ import (
 func SetupRouter(h *handler.Handler) *gin.Engine {
 	router := gin.Default()
 
-	router.LoadHTMLGlob("web/static/test/*")
+	//router.LoadHTMLGlob("web/static/test/*")
 
 	//router.Use(middleware.LogDetailedRequestsMiddleware())
 	router.Use(gin.Recovery())
@@ -28,9 +28,12 @@ func SetupRouter(h *handler.Handler) *gin.Engine {
 		//	api.GET("/admin", h.AdminHandler())
 		//}
 		api.GET("/admin", h.AdminHandler())
-		api.GET("/admintest", h.AdminHandlerTest()) //TODO: remove after testing
+		api.POST("/admin/products/add-product", h.PostAdminAddProduct())
+		api.POST("/admin/products/addItem", h.PostAdminAddProductItem())
+		api.GET("/admin/products/getItem", h.AdminGetProductItem())
+		//api.GET("/admintest", h.AdminHandlerTest()) //TODO: remove after testing
 
-		//api.GET("/employee", h.EmployeeHandler())
+		api.GET("/employee", h.EmployeeHandler())
 
 		// Define your routes here
 		api.GET("/ping", func(c *gin.Context) {
@@ -45,7 +48,7 @@ func SetupRouter(h *handler.Handler) *gin.Engine {
 
 	// Serve static files from the "static" directory
 	//TODO: pass the path from config
-	router.Static("/static", "./web/static")
+	router.Static("frontend/static", "./frontend/static")
 
 	return router
 }

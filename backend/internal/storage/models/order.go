@@ -6,7 +6,6 @@ type Order struct {
 	ID                uint     `gorm:"primaryKey"`
 	User              User     `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;"`
 	Ciy               City     `gorm:"foreignKey:CityID;constraint:OnDelete:CASCADE;"`
-	Area              Area     `gorm:"foreignKey:AreaID;constraint:OnDelete:CASCADE;"`
 	Product           Product  `gorm:"foreignKey:ProductID;constraint:OnDelete:CASCADE;"`
 	Quantity          uint     `gorm:"not null"`
 	Due               uint     `gorm:"not null"`
