@@ -3,24 +3,31 @@ package repository
 import (
 	"Magaz/backend/internal/storage/models"
 	"gorm.io/gorm"
+	"time"
 )
+
+//TODO: This is temporary file to fetch data from db
+//TODO: Refactor this file . storage crud exist for it
 
 // ProductItem represents a specific quantity and price of a product.
 type ProductItem struct {
-	Quantity  float32
-	Price     float32
-	Available float32
+	QuantityID uint
+	Quantity   float32
+	Price      float32
+	AddrCnt    int64 //How many addresses of that product
 }
 
 // ProductView is used for displaying products in the UI.
 type ProductView struct {
-	Name  string
-	Total float32 // This represents the total available quantity
-	Items []ProductItem
+	Name      string
+	Total     float32 // This represents the total available quantity
+	ProductID uint
+	Items     []ProductItem
 }
 
 // CityWithProductsView represents a city and its associated products for display.
 type CityWithProductsView struct {
+	CityID   uint
 	City     string
 	Products []ProductView
 }
@@ -28,8 +35,12 @@ type CityWithProductsView struct {
 func FetchCityProducts(db *gorm.DB) ([]CityWithProductsView, error) {
 	var cityProducts []models.CityProduct
 
-	// Preload associated City, Product, and ProductPrices
-	err := db.Preload("City").Preload("Product").Preload("ProductPrices").Find(&cityProducts).Error
+	//
+	err := db.Preload("City").
+		Preload("Product").
+		Preload("QtnPrices").
+		Preload("QtnPrices.Address").
+		Find(&cityProducts).Error
 	if err != nil {
 		return nil, err
 	}
@@ -44,6 +55,7 @@ func FetchCityProducts(db *gorm.DB) ([]CityWithProductsView, error) {
 		// Initialize city in the map if not already present
 		if _, exists := cityMap[city.ID]; !exists {
 			cityMap[city.ID] = &CityWithProductsView{
+				CityID:   city.ID,
 				City:     city.Name,
 				Products: []ProductView{},
 			}
@@ -51,19 +63,27 @@ func FetchCityProducts(db *gorm.DB) ([]CityWithProductsView, error) {
 
 		// Convert ProductPrices to ProductItems
 		var productItems []ProductItem
-		for _, pp := range cp.ProductPrices {
+		for _, pp := range cp.QtnPrices {
+
+			var addrCount int64
+			err := db.Model(&models.Address{}).Where("qtn_price_id = ?", pp.ID).Count(&addrCount).Error
+			if err != nil {
+				return nil, err
+			}
 			productItems = append(productItems, ProductItem{
-				Quantity:  pp.Quantity,
-				Price:     pp.Price,
-				Available: cp.TotalQuantity,
+				QuantityID: pp.ID,
+				Quantity:   pp.Quantity,
+				Price:      pp.Price,
+				AddrCnt:    addrCount,
 			})
 		}
 
 		// Add product under the city
 		cityMap[city.ID].Products = append(cityMap[city.ID].Products, ProductView{
-			Name:  product.Name,
-			Total: cp.TotalQuantity,
-			Items: productItems,
+			ProductID: product.ID,
+			Name:      product.Name,
+			Total:     cp.TotalQuantity,
+			Items:     productItems,
 		})
 	}
 
@@ -74,4 +94,14 @@ func FetchCityProducts(db *gorm.DB) ([]CityWithProductsView, error) {
 	}
 
 	return cityWithProductsList, nil
+}
+
+type AddressItem struct {
+	ProductID   uint
+	CityID      uint
+	Quantity    float32
+	Description string
+	Image       string
+	AddedAt     time.Time
+	AddedByID   uint
 }

@@ -59,23 +59,23 @@
                         <th scope="col">Статус</th>
                     </tr>
                     </thead>
-                    <tbody class="table-group-divider">
-                    <tr onclick="toggleOrderDetails(1,this)">
-                        <td>1</td>
-                        <td>Apple</td>
-                        <td>10kg</td>
-                        <td>$50</td>
-                        <td>Aug 27 2024 10:25pm</td>
-                        <td>Not Paid</td>
-                    </tr>
-                    <tr onclick="toggleOrderDetails(2,this)">
-                        <td>2</td>
-                        <td>Banana</td>
-                        <td>2kg</td>
-                        <td>$15</td>
-                        <td>Aug 27 2024 10:30pm</td>
-                        <td>PAID</td>
-                    </tr>
+                    <tbody class="table-group-divider" id="orders-tbody">
+{{/*                    <tr onclick="toggleOrderDetails(1,this)">*/}}
+{{/*                        <td>1</td>*/}}
+{{/*                        <td>Apple</td>*/}}
+{{/*                        <td>10kg</td>*/}}
+{{/*                        <td>$50</td>*/}}
+{{/*                        <td>Aug 27 2024 10:25pm</td>*/}}
+{{/*                        <td>Not Paid</td>*/}}
+{{/*                    </tr>*/}}
+{{/*                    <tr onclick="toggleOrderDetails(2,this)">*/}}
+{{/*                        <td>2</td>*/}}
+{{/*                        <td>Banana</td>*/}}
+{{/*                        <td>2kg</td>*/}}
+{{/*                        <td>$15</td>*/}}
+{{/*                        <td>Aug 27 2024 10:30pm</td>*/}}
+{{/*                        <td>PAID</td>*/}}
+{{/*                    </tr>*/}}
                     </tbody>
                 </table>
             </div>
@@ -99,6 +99,10 @@
 {{define "scripts"}}
 
     <script src="/frontend/static/js/orderdetails.js"></script>
+
+    <script>
+
+    </script>
 {{end}}
 
 {{define "footer"}}

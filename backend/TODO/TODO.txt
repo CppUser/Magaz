@@ -1,0 +1,2 @@
+TODO: Try to handle order processing by using Concurrency  Pipline pattern
+(Receiving order, sending it to operator,receiving from operator, assigning details, and sending to client)

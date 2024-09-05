@@ -49,7 +49,7 @@
             <hr>
             <ul class="nav nav-pills flex-column mb-auto">
                 <li>
-                    <a href="#" class="nav-link link-body-emphasis" onclick="showSection('statistics'); return false;">
+                    <a href="/statistics" class="nav-link link-body-emphasis" onclick="showSection('statistics'); return false;">
                         <svg class="bi pe-none me-2" width="16" height="16"><use xlink:href="#speedometer2"></use></svg>
                         Статистика
                     </a>
@@ -61,7 +61,7 @@
                     </a>
                 </li>
                 <li>
-                    <a href="#" class="nav-link link-body-emphasis" onclick="showSection('products'); return false;">
+                    <a href="/api/admin/products/getProducts" class="nav-link link-body-emphasis" onclick="showSection('products'); return false;">
                         <svg class="bi pe-none me-2" width="16" height="16"><use xlink:href="#table"></use></svg>
                         Продукт
                     </a>
@@ -98,10 +98,12 @@
             <!------------------->
 
             <!-- Products Content -->
-            <div id="products" class="content-section d-flex flex-column" style="display: block;">
+            <div id="products" class="content-section d-flex flex-column" style="display:block;">
+
                 <!-- Add Product Button -->
                 <div class="d-flex justify-content-between align-items-center mt-4">
                     <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addProductModal">Add Product</button>
+
                 </div>
 
                 <!-- Add Product Modal -->
@@ -184,11 +186,11 @@
                 </div>
 
                 <!-- Product Item Modal -->
-                <div class="modal fade" id="editProductModal" tabindex="-1" aria-labelledby="editProductModalLabel" aria-hidden="true">
+                <div class="modal fade" id="productItemModal" tabindex="-1" aria-labelledby="productItemModalLabel" aria-hidden="true">
                     <div class="modal-dialog modal-lg">
                         <div class="modal-content">
                             <div class="modal-header">
-                                <h5 class="modal-title" id="editProductModalLabel">Edit Product</h5>
+                                <h5 class="modal-title" id="productItemModalLabel">Edit Product</h5>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                 <!-- Add button -->
                                 <button type="button" class="btn btn-primary" onclick="toggleAddItemSection()" style="position: absolute; right: 15px;">Add</button>
@@ -199,10 +201,12 @@
                                     <table class="table">
                                         <thead>
                                         <tr>
-                                            <th>Location</th>
-                                            <th>Date Added</th>
+                                            <th>Информация</th>
+                                            <th>Количество</th>
+                                            <th>Дата</th>
+                                            <th>Кем добавлен</th>
                                             <th>Image</th>
-                                            <th>Actions</th>
+                                            <th>Действия</th>
                                         </tr>
                                         </thead>
                                         <tbody id="itemsTableBody">
@@ -233,9 +237,11 @@
                 <!-- Products Display Section -->
                 <div id="products-section" class="flex-grow-1 overflow-auto" style="height: calc(100vh - 150px);">
                     {{range .CitiesWithProducts}}
+                        {{ $cityID := .CityID }}
                         <div class="city-section mt-4" style="margin-bottom: 100px;">
                             <h4 class="fw-bold mt-4">{{.City}}</h4>
                             {{range .Products}}
+                                {{ $productID := .ProductID }}
                                 <div class="d-flex justify-content-between align-items-center mt-4">
                                     <h5 class="fw-bold">{{.Name}}</h5>
                                     <span class="fw-bold" style="margin-right: 20px;">Total: {{.Total}}</span>
@@ -251,12 +257,17 @@
                                     </thead>
                                     <tbody class="table-group-divider">
                                     {{range .Items}}
+                                        {{ $quantityID := .QuantityID }}
                                         <tr>
                                             <td>{{.Quantity}}</td>
                                             <td>{{.Price}}</td>
-                                            <td>{{.Available}}</td>
+                                            <td>{{.AddrCnt}}</td>
                                             <td class="d-flex justify-content-end">
-                                                <button class="btn btn-outline-primary btn-sm d-flex align-items-center btn-spacing" onclick="openEditModal(1)">
+                                                <button class="btn btn-outline-primary btn-sm d-flex align-items-center btn-spacing"
+                                                        data-city-id="{{ $cityID }}"
+                                                        data-product-id="{{ $productID }}"
+                                                        data-quantity-id="{{ $quantityID }}"
+                                                        onclick="openProductItemModal(this)">
                                                     Адреса
                                                 </button>
 
@@ -292,20 +303,28 @@
 {{define "scripts"}}
     <script src="/frontend/static/js/admin/products.js"></script>
     <script>
-        function openEditModal(productId) {
+        function openProductItemModal(btn) { //TODO: must return lenght of the items to update availability
+
+
+            // Read the data attributes from the button element
+            const cityID = btn.getAttribute('data-city-id');
+            const productID = btn.getAttribute('data-product-id');
+            const quantityID = btn.getAttribute('data-quantity-id');
+
+            console.log('City ID:', cityID);
+            console.log('Product ID:', productID);
+            console.log('Quantity ID:', quantityID);
 
             // Set up the modal with product-specific data if needed
-            document.getElementById('editProductModalLabel').textContent = `Edit Product ${productId}`;
+            document.getElementById('productItemModalLabel').textContent = `Доступные адреса `;
 
-            // Set a global variable or a data attribute to track the current product ID
-            document.getElementById('editProductModal').setAttribute('data-product-id', productId);
 
             // Load items related to the specific product when opening the modal
-            loadItems(productId);
+            loadItems(cityID, productID, quantityID);
 
             // Show the modal
-            const editProductModal = new bootstrap.Modal(document.getElementById('editProductModal'));
-            editProductModal.show();
+            const productItemModal = new bootstrap.Modal(document.getElementById('productItemModal'));
+            productItemModal.show();
         }
 
         function editLocation(index) {
@@ -325,8 +344,10 @@
                 document.getElementById('addItemSection').style.display === 'none' ? 'block' : 'none';
         }
 
-        function loadItems() {
-            fetch('/api/admin/products/getItem')
+        function loadItems(cityID, productID, quantityID) {
+            const url = `/api/admin/products/getProdAddr?cityID=${cityID}&productID=${productID}&quantityID=${quantityID}`;
+
+            fetch(url)
                 .then(response => response.json())
                 .then(data => {
                     const itemsTableBody = document.getElementById("itemsTableBody");
@@ -335,12 +356,14 @@
                     data.items.forEach(item => {
                         const row = document.createElement('tr');
                         row.innerHTML = `
-                <td>${item.description}</td>
-                <td>${item.addedAt}</td>
-                <td><img src="${item.image}" width="50" /></td>
+                <td>${item.Description}</td>
+                <td>${item.Quantity}</td>
+                <td>${new Date(item.AddedAt).toLocaleDateString()}</td>
+                <td>${item.AddedBy}</td>
+                <td><img src="${item.Image}" width="50" /></td>
                 <td>
-                    <button class="btn btn-primary" onclick="editItem(${item.id})">Edit</button>
-                    <button class="btn btn-danger" onclick="deleteItem(${item.id})">Delete</button>
+                    <button class="btn btn-primary" onclick="editItem(${item.ID})">Edit</button>
+                    <button class="btn btn-danger" onclick="deleteItem(${item.ID})">Delete</button>
                 </td>
             `;
                         itemsTableBody.appendChild(row);

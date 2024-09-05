@@ -12,13 +12,8 @@ func (h *Handler) EmployeeHandler() gin.HandlerFunc {
 
 		tmpl := h.TmplCache["employee.page.gohtml"]
 
-		data := gin.H{
-			"Title": "Employee",
-			"Body":  "This is the Employee page",
-		}
-
 		if tmpl != nil {
-			err := tmpl.ExecuteTemplate(c.Writer, "base", data)
+			err := tmpl.ExecuteTemplate(c.Writer, "base", nil)
 			if err != nil {
 				h.Logger.Error("Error executing template", zap.Error(err))
 				c.String(http.StatusInternalServerError, "Error executing template: %v", err)

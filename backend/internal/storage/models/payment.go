@@ -15,7 +15,7 @@ type Card struct {
 	ExpireDate string `gorm:"size:100;not null"`
 	CVV        string `gorm:"size:100;not null"`
 	CardType   string `gorm:"size:100;not null"`
-	Balance    string `gorm:"size:100;not null"`
+	Balance    int    `gorm:"size:100;not null"`
 	UsedTimes  uint   `gorm:"default:0"`
 	Active     bool   `gorm:"default:true"`
 	CreatedAt  time.Time

@@ -6,6 +6,7 @@ import (
 	"Magaz/backend/internal/router"
 	"Magaz/backend/internal/storage/models"
 	"Magaz/backend/internal/utils"
+	"Magaz/backend/pkg/bot/telegram"
 	"Magaz/backend/pkg/client/postgres"
 	"Magaz/backend/pkg/client/redis"
 	"Magaz/backend/pkg/utils/logger"
@@ -70,14 +71,14 @@ func main() {
 	store := sessions.NewCookieStore([]byte(sessionKey))
 
 	//TODO: passing to handler initialized clients like redis and db . Pass handler instead ?
-	//bot := telegram.Bot{
-	//	Config:           &cfg.Bot,
-	//	Logger:           zaplog,
-	//	UpdateChanBuffer: 128, // Buffer size is 128 default
-	//	Cache:            rdb,
-	//	DB:               db,
-	//}
-	//bot.InitBot()
+	bot := telegram.Bot{
+		Config:           &cfg.Bot,
+		Logger:           zaplog,
+		UpdateChanBuffer: 128, // Buffer size is 128 default
+		Cache:            rdb,
+		DB:               db,
+	}
+	bot.InitBot()
 
 	tempalteCache, err := handler.CreateTemplateCache(cfg.CacheDir.Layouts, cfg.CacheDir.Pages)
 	if err != nil {
@@ -85,9 +86,9 @@ func main() {
 	}
 
 	h := handler.Handler{
-		Api:    cfg,
-		Logger: zaplog,
-		//Bot:       &bot,
+		Api:       cfg,
+		Logger:    zaplog,
+		Bot:       &bot,
 		Redis:     rdb,
 		DB:        db,
 		TmplCache: tempalteCache,
@@ -97,7 +98,7 @@ func main() {
 
 	rh := router.SetupRouter(&h)
 
-	//go bot.ReceiveUpdates() //TODO: no the best approach find other way to handle updates
+	go bot.ReceiveUpdates() //TODO: no the best approach find other way to handle updates
 
 	server := &http.Server{
 		Addr:    cfg.Server.Host + ":" + cfg.Server.Port,
@@ -131,73 +132,14 @@ func main() {
 // Migrate the database models
 func migrateDatabase(db *gorm.DB) error {
 	return db.AutoMigrate(
-		//&models.User{},
+		&models.User{},
 		&models.City{},
 		&models.Product{},
-		&models.ProductPrice{},
+		&models.QtnPrice{},
 		&models.CityProduct{},
-		&models.Item{},
+		&models.Address{},
+		&models.Order{},
+		&models.Card{},
+		&models.Crypto{},
 	)
-}
-
-func PopulateData(db *gorm.DB) error {
-	// Sample Cities
-	newYork := models.City{Name: "New York"}
-	chicago := models.City{Name: "Chicago"}
-
-	// Insert Cities into the database
-	db.Create(&newYork)
-	db.Create(&chicago)
-
-	// Sample Products
-	apples := models.Product{
-		Name:        "Apples",
-		Description: "Fresh apples",
-		Image:       "apples.jpg",
-	}
-	bananas := models.Product{
-		Name:        "Bananas",
-		Description: "Ripe bananas",
-		Image:       "bananas.jpg",
-	}
-
-	// Insert Products into the database
-	db.Create(&apples)
-	db.Create(&bananas)
-
-	// Sample CityProducts with Prices and Quantities
-	nyApples := models.CityProduct{
-		CityID:        newYork.ID,
-		ProductID:     apples.ID,
-		TotalQuantity: 300, // 300kg of apples in New York
-		ProductPrices: []models.ProductPrice{
-			{Quantity: 1, Price: 10}, // $10 per kg
-			{Quantity: 5, Price: 45}, // $45 per 5kg
-		},
-	}
-	nyBananas := models.CityProduct{
-		CityID:        newYork.ID,
-		ProductID:     bananas.ID,
-		TotalQuantity: 200, // 200kg of bananas in New York
-		ProductPrices: []models.ProductPrice{
-			{Quantity: 1, Price: 3},  // $3 per kg
-			{Quantity: 5, Price: 14}, // $14 per 5kg
-		},
-	}
-	chiApples := models.CityProduct{
-		CityID:        chicago.ID,
-		ProductID:     apples.ID,
-		TotalQuantity: 100, // 100kg of apples in Chicago
-		ProductPrices: []models.ProductPrice{
-			{Quantity: 1, Price: 22},  // $22 per kg
-			{Quantity: 5, Price: 100}, // $100 per 5kg
-		},
-	}
-
-	// Insert CityProducts with associated ProductPrices into the database
-	db.Create(&nyApples)
-	db.Create(&nyBananas)
-	db.Create(&chiApples)
-
-	return nil
 }

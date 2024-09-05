@@ -27,13 +27,19 @@ func SetupRouter(h *handler.Handler) *gin.Engine {
 		//{
 		//	api.GET("/admin", h.AdminHandler())
 		//}
-		api.GET("/admin", h.AdminHandler())
-		api.POST("/admin/products/add-product", h.PostAdminAddProduct())
-		api.POST("/admin/products/addItem", h.PostAdminAddProductItem())
-		api.GET("/admin/products/getItem", h.AdminGetProductItem())
-		//api.GET("/admintest", h.AdminHandlerTest()) //TODO: remove after testing
+		admin := api.Group("/admin")
+		{
+			admin.GET("/", h.AdminHandler())
+			admin.GET("/products/getProducts", h.GetProductsAdminHandler())
+			admin.POST("/products/add-product", h.PostAdminAddProduct())
+			admin.POST("/products/addProdAddr", h.PostAdminAddProductAddr()) //TODO:Rename o address
+			admin.GET("/products/getProdAddr", h.AdminGetProductAddr())      //TODO:Rename o address
+		}
 
-		api.GET("/employee", h.EmployeeHandler())
+		empl := api.Group("/empl")
+		{
+			empl.GET("/", h.EmployeeHandler())
+		}
 
 		// Define your routes here
 		api.GET("/ping", func(c *gin.Context) {

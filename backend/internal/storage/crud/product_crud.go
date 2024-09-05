@@ -2,28 +2,24 @@ package crud
 
 import (
 	"Magaz/backend/internal/storage/models"
+	"fmt"
 	"gorm.io/gorm"
-	"log"
 )
 
-func GetProductPricesByName(db *gorm.DB, productName string) ([]models.ProductPrice, error) {
+func GetProductPricesByName(db *gorm.DB, productName string) ([]models.QtnPrice, error) {
 	var product models.Product
 
 	// Fetch the product by its name
 	if err := db.Where("name = ?", productName).First(&product).Error; err != nil {
-		log.Println("Error fetching product:", err)
 		return nil, err
 	}
-	log.Println("Fetched product:", product)
 
 	// Fetch the prices and quantities for the product
-	var productPrices []models.ProductPrice
-	if err := db.Where("product_id = ?", product.ID).Find(&productPrices).Error; err != nil {
-		log.Println("Error fetching product prices:", err)
+	var productPrices []models.QtnPrice
+	if err := db.Where("city_product_id = ?", product.ID).Find(&productPrices).Error; err != nil {
 		return nil, err
 	}
 
-	log.Println("Fetched product prices:", productPrices)
 	return productPrices, nil
 }
 
@@ -49,4 +45,28 @@ func GetCityProducts(db *gorm.DB, cityName string) ([]models.Product, error) {
 	}
 
 	return products, nil
+}
+
+func GetProductIDByCityAndProductName(db *gorm.DB, cityName string, productName string) (uint, error) {
+	var city models.City
+
+	// Find the city ID by name
+	if err := db.Where("name = ?", cityName).First(&city).Error; err != nil {
+		return 0, fmt.Errorf("city not found: %w", err)
+	} // retrieve 2
+
+	// Then, find the products associated with the city
+	var cityProducts []models.CityProduct
+	if err := db.Preload("Product").Where("city_id = ?", city.ID).Find(&cityProducts).Error; err != nil {
+		return 0, err
+	} //retrieve all products in that city 2
+
+	for _, p := range cityProducts {
+		if p.Product.Name == productName {
+			return p.ProductID, nil
+		}
+
+	}
+	// Return the ProductID from CityProduct
+	return 0, fmt.Errorf("product with name '%s' not found in city '%s'", productName, cityName)
 }

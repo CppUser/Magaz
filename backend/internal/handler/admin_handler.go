@@ -6,27 +6,31 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"net/http"
+	"strconv"
 )
-
-type ProductItem struct {
-	Quantity  float32
-	Price     float32
-	Available int // This can be calculated if needed
-}
-
-type ProductView struct {
-	City     string
-	Products []ProductDetail
-}
-
-type ProductDetail struct {
-	Name  string
-	Total int
-	Items []ProductItem
-}
 
 // // AdminHandler handles the incoming requests from the admin
 func (h *Handler) AdminHandler() gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		tmpl := h.TmplCache["admin.page.gohtml"]
+
+		if tmpl != nil {
+			err := tmpl.ExecuteTemplate(c.Writer, "base", nil)
+			if err != nil {
+				h.Logger.Error("Error executing template", zap.Error(err))
+				c.String(http.StatusInternalServerError, "Error executing template: %v", err)
+			}
+		} else {
+			h.Logger.Error("Template not found", zap.String("template", "admin.page.gohtml"))
+			c.String(http.StatusInternalServerError, "Template not found")
+		}
+
+	}
+}
+
+// // GetProductsAdminHandler handles the incoming requests from the admin
+func (h *Handler) GetProductsAdminHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		tmpl := h.TmplCache["admin.page.gohtml"]
@@ -116,7 +120,7 @@ func (h *Handler) PostAdminAddProduct() gin.HandlerFunc {
 
 		// Add product prices to the database
 		for _, qp := range productData.QuantityPricePairs {
-			productPrice := models.ProductPrice{
+			productPrice := models.QtnPrice{
 				CityProductID: cityProduct.ID,
 				Quantity:      qp.Quantity,
 				Price:         qp.Price,
@@ -133,23 +137,66 @@ func (h *Handler) PostAdminAddProduct() gin.HandlerFunc {
 	}
 }
 
-func (h *Handler) AdminGetProductItem() gin.HandlerFunc {
+func (h *Handler) AdminGetProductAddr() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var items []models.Item
+		//var items []models.Address
 
-		// Fetch items from the database
-		if err := h.DB.Find(&items).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch items"})
+		// Get query parameters
+		cityIDStr := c.Query("cityID")
+		productIDStr := c.Query("productID")
+		quantityIDStr := c.Query("quantityID")
+
+		// Convert query parameters to uint
+		cityID, err := strconv.ParseUint(cityIDStr, 10, 32)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid city ID"})
 			return
+		}
+		productID, err := strconv.ParseUint(productIDStr, 10, 32)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid product ID"})
+			return
+		}
+		quantityID, err := strconv.ParseUint(quantityIDStr, 10, 32)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid quantity ID"})
+			return
+		}
+
+		var addresses []models.Address
+		// Preload the Employee who added the address and fetch addresses for the given city, product, and quantity
+		if err := h.DB.Preload("AddedBy").Where("city_id = ? AND product_id = ? AND qtn_price_id = ?", cityID, productID, quantityID).Find(&addresses).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch addresses"})
+			return
+		}
+
+		// Fetch the actual quantity from QtnPrice table
+		var qtnPrice models.QtnPrice
+		if err := h.DB.First(&qtnPrice, quantityID).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch quantity"})
+			return
+		}
+
+		// Prepare the data to be sent in the response
+		var items []map[string]interface{}
+		for _, addr := range addresses {
+			items = append(items, map[string]interface{}{
+				"ID":          addr.ID,
+				"Description": addr.Description,
+				"Quantity":    qtnPrice.Quantity, //TODO: need to fetch actual quantity that passed by quantityId
+				"AddedAt":     addr.AddedAt,
+				"AddedBy":     addr.AddedBy.Username, // Assuming AddedBy is fetched with the Address model
+				"Image":       addr.Image,
+			})
 		}
 
 		c.JSON(http.StatusOK, gin.H{"items": items})
 	}
 }
-func (h *Handler) PostAdminAddProductItem() gin.HandlerFunc {
+func (h *Handler) PostAdminAddProductAddr() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		var newItem models.Item
+		var newItem models.Address
 
 		// Bind the form data from the request to the newItem struct
 		if err := c.ShouldBind(&newItem); err != nil {
