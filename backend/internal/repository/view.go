@@ -2,8 +2,8 @@ package repository
 
 import (
 	"Magaz/backend/internal/storage/models"
+
 	"gorm.io/gorm"
-	"time"
 )
 
 //TODO: This is temporary file to fetch data from db
@@ -66,7 +66,9 @@ func FetchCityProducts(db *gorm.DB) ([]CityWithProductsView, error) {
 		for _, pp := range cp.QtnPrices {
 
 			var addrCount int64
-			err := db.Model(&models.Address{}).Where("qtn_price_id = ?", pp.ID).Count(&addrCount).Error
+			err := db.Model(&models.Address{}).
+				Where("qtn_price_id = ? AND released = ?", pp.ID, false).
+				Count(&addrCount).Error
 			if err != nil {
 				return nil, err
 			}
@@ -94,14 +96,4 @@ func FetchCityProducts(db *gorm.DB) ([]CityWithProductsView, error) {
 	}
 
 	return cityWithProductsList, nil
-}
-
-type AddressItem struct {
-	ProductID   uint
-	CityID      uint
-	Quantity    float32
-	Description string
-	Image       string
-	AddedAt     time.Time
-	AddedByID   uint
 }

@@ -3,10 +3,11 @@ package handler
 import (
 	"Magaz/backend/internal/repository"
 	"Magaz/backend/internal/storage/models"
-	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
 	"net/http"
 	"strconv"
+
+	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
 // // AdminHandler handles the incoming requests from the admin
@@ -180,14 +181,17 @@ func (h *Handler) AdminGetProductAddr() gin.HandlerFunc {
 		// Prepare the data to be sent in the response
 		var items []map[string]interface{}
 		for _, addr := range addresses {
-			items = append(items, map[string]interface{}{
-				"ID":          addr.ID,
-				"Description": addr.Description,
-				"Quantity":    qtnPrice.Quantity, //TODO: need to fetch actual quantity that passed by quantityId
-				"AddedAt":     addr.AddedAt,
-				"AddedBy":     addr.AddedBy.Username, // Assuming AddedBy is fetched with the Address model
-				"Image":       addr.Image,
-			})
+			if !addr.Released {
+				items = append(items, map[string]interface{}{
+					"ID":          addr.ID,
+					"Description": addr.Description,
+					"Quantity":    qtnPrice.Quantity, //TODO: need to fetch actual quantity that passed by quantityId
+					"AddedAt":     addr.AddedAt,
+					"AddedBy":     addr.AddedBy.Username, // Assuming AddedBy is fetched with the Address model
+					"Image":       addr.Image,
+				})
+			}
+
 		}
 
 		c.JSON(http.StatusOK, gin.H{"items": items})

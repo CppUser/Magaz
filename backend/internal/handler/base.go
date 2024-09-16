@@ -2,13 +2,18 @@ package handler
 
 import (
 	"Magaz/backend/internal/config"
+	"Magaz/backend/internal/system/sse"
 	"Magaz/backend/pkg/bot/telegram"
+	"html/template"
+	"net/http"
+	"os"
+	"path/filepath"
+
+	"github.com/gin-gonic/gin"
 	"github.com/gorilla/sessions"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
-	"html/template"
-	"path/filepath"
 )
 
 // TODO: Needs to move to more global space so everyone who need can access it
@@ -21,6 +26,7 @@ type Handler struct {
 	DB        *gorm.DB
 	TmplCache map[string]*template.Template
 	Session   *sessions.CookieStore
+	SSES      *sse.SSEHub
 }
 
 //func (h *Handler) NewHandler() *Handler {
@@ -64,4 +70,31 @@ func CreateTemplateCache(layoutDir string, pagesDir string) (map[string]*templat
 	}
 
 	return cache, nil
+}
+
+func (h *Handler) ServeImage() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		img := c.Param("image")
+
+		possibleExtensions := []string{".jpeg", ".jpg", ".jfif", ".pjpeg", "pjp", ".png", ".webp", ".svg"}
+
+		cwd, _ := os.Getwd()
+		var imagePath string
+		fileFound := false
+		for _, ext := range possibleExtensions {
+			imagePath = filepath.Join(cwd, "backend", "storage", "images", img+ext)
+			if _, err := os.Stat(imagePath); err == nil {
+				fileFound = true
+				break
+			}
+		}
+
+		if !fileFound {
+			h.Logger.Error("Image not found", zap.String("img", img))
+			c.JSON(http.StatusNotFound, gin.H{"error": "Image not found"})
+			return
+		}
+
+		c.File(imagePath)
+	}
 }

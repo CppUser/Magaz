@@ -5,6 +5,7 @@ import (
 	"Magaz/backend/internal/handler"
 	"Magaz/backend/internal/router"
 	"Magaz/backend/internal/storage/models"
+	"Magaz/backend/internal/system/sse"
 	"Magaz/backend/internal/utils"
 	"Magaz/backend/pkg/bot/telegram"
 	"Magaz/backend/pkg/client/postgres"
@@ -70,6 +71,9 @@ func main() {
 	// Initialize the session store with the retrieved or generated session key
 	store := sessions.NewCookieStore([]byte(sessionKey))
 
+	hub := sse.NewSSEHub(db, zaplog)
+	go hub.Run()
+
 	//TODO: passing to handler initialized clients like redis and db . Pass handler instead ?
 	bot := telegram.Bot{
 		Config:           &cfg.Bot,
@@ -77,6 +81,7 @@ func main() {
 		UpdateChanBuffer: 128, // Buffer size is 128 default
 		Cache:            rdb,
 		DB:               db,
+		Hub:              hub,
 	}
 	bot.InitBot()
 
@@ -93,6 +98,7 @@ func main() {
 		DB:        db,
 		TmplCache: tempalteCache,
 		Session:   store,
+		SSES:      hub,
 	}
 	//handler.NewHandler(h)
 
@@ -119,7 +125,7 @@ func main() {
 	zaplog.Info("Shutting down server...")
 
 	// Create a context with a timeout to allow for graceful shutdown
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Second)
 	defer cancel()
 
 	// Attempt to gracefully shut down the server

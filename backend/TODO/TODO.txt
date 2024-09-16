@@ -1,2 +1,6 @@
 TODO: Try to handle order processing by using Concurrency  Pipline pattern
 (Receiving order, sending it to operator,receiving from operator, assigning details, and sending to client)
+
+TODO: Project has crud and repository  doing pritty much same thing fix it use repository to retrieve data or just make crud to be used everywhere
+TODO: Need to remove View models and use reg models just add `json: ....` tag to them
+TODO: Figure out sorting orders , once new details added to order it goes to the bottom it does not stay in same possition

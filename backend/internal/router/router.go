@@ -2,6 +2,7 @@ package router
 
 import (
 	"Magaz/backend/internal/handler"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -38,15 +39,16 @@ func SetupRouter(h *handler.Handler) *gin.Engine {
 
 		empl := api.Group("/empl")
 		{
-			empl.GET("/", h.EmployeeHandler())
+			//empl.GET("/orders", h.HEmployeeHandler())
+			empl.GET("/orders", h.EmployeeHandler())
+			empl.GET("/orders/address", h.GetOrderAddressHandler())
+			empl.POST("/orders/address/assign", h.PostOrderAddressHandler())
+			empl.POST("/orders/release/:orderId", h.ReleaseOrderHandler())
+
 		}
 
-		// Define your routes here
-		api.GET("/ping", func(c *gin.Context) {
-			c.JSON(200, gin.H{
-				"message": "pong",
-			})
-		})
+		//General GET calls
+		api.GET("/get/images/:image", h.ServeImage())
 
 		//POST calls
 		api.POST("/bot/telegram", h.BotRequestHandler())

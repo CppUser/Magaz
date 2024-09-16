@@ -16,7 +16,7 @@ func Create[T any](db *gorm.DB, model *T) error {
 }
 
 // Get a record by ID from the database
-func Get[T any](db *gorm.DB, id uint) (*T, error) {
+func Get[T any, I comparable](db *gorm.DB, id I) (*T, error) {
 	var model T
 	if err := db.First(&model, id).Error; err != nil {
 		return nil, err
@@ -28,6 +28,31 @@ func Get[T any](db *gorm.DB, id uint) (*T, error) {
 func GetAll[T any](db *gorm.DB) ([]T, error) {
 	var models []T
 	if err := db.Find(&models).Error; err != nil {
+		return nil, err
+	}
+	return models, nil
+}
+
+// Get a record by ID from the database with preloaded associations
+func GetWithAssociations[T any](db *gorm.DB, id uint, associations ...string) (*T, error) {
+	var model T
+	query := db.First(&model, id)
+	for _, assoc := range associations {
+		query = query.Preload(assoc)
+	}
+	if err := query.Error; err != nil {
+		return nil, err
+	}
+	return &model, nil
+}
+
+func GetAllWithAssociations[T any](db *gorm.DB, associations ...string) ([]T, error) {
+	var models []T
+	query := db.Find(&models)
+	for _, assoc := range associations {
+		query = query.Preload(assoc)
+	}
+	if err := query.Error; err != nil {
 		return nil, err
 	}
 	return models, nil

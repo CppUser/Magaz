@@ -2,23 +2,26 @@ package models
 
 import "time"
 
+// TODO: Refactor should be gorm and json or one of them
 type Order struct {
-	ID                uint `gorm:"primaryKey;autoIncrement"`
-	UserID            int64
-	User              *User   `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;"`
-	CityID            uint    `gorm:"not null"`
-	City              City    `gorm:"foreignKey:CityID;constraint:OnDelete:CASCADE;"`
-	ProductID         uint    `gorm:"not null"`
-	Product           Product `gorm:"foreignKey:ProductID;constraint:OnDelete:CASCADE;"`
-	Quantity          float32 `gorm:"not null"`
-	Due               uint    `gorm:"not null"`
-	PaymentMethodType string  `gorm:"size:100;not null"` // e.g., "Card", "Crypto"
-	PaymentMethodID   uint    `gorm:"not null"`          // ID of the associated payment method
-	PaymentConfImg    string
-	Released          bool `gorm:"default:false"`
-	ReleasedByID      *uint
+	ID                uint      `gorm:"primaryKey;autoIncrement" json:"id"`
+	UserID            int64     `gorm:""`
+	User              *User     `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;"`
+	CityID            uint      `gorm:"not null"`
+	City              City      `gorm:"foreignKey:CityID;constraint:OnDelete:CASCADE;"`
+	ProductID         uint      `gorm:"not null"`
+	Product           Product   `gorm:"foreignKey:ProductID;constraint:OnDelete:CASCADE;"`
+	Quantity          float32   `gorm:"not null" json:"quantity"`
+	Due               uint      `gorm:"not null" json:"due"`
+	PaymentMethodType string    `gorm:"size:100;not null" json:"paymentMethodType"` // e.g., "Card", "Crypto"
+	PaymentMethodID   uint      `gorm:"not null"`                                   // ID of the associated payment method
+	PaymentConfImg    string    `gorm:""`
+	Released          bool      `gorm:"default:false"`
+	ReleasedByID      *uint     `gorm:"" json:"released_by_id"`
 	ReleasedBy        *Employee `gorm:"foreignKey:ReleasedByID;constraint:OnDelete:CASCADE;"`
-	ReleaseTime       time.Time
-	CreatedAt         time.Time
-	UpdatedAt         time.Time
+	ReleaseTime       time.Time `gorm:"" json:"release_time"`
+	ReleasedAddrID    *uint     `gorm:""`
+	AddrToRelease     *Address  `gorm:"foreignKey:ReleasedAddrID;constraint:OnDelete:CASCADE;"`
+	CreatedAt         time.Time `gorm:"" json:"created_at"`
+	UpdatedAt         time.Time `gorm:"" json:"updated_at"`
 }

@@ -3,9 +3,10 @@ package crud
 import (
 	"Magaz/backend/internal/storage/models"
 	"fmt"
-	"gorm.io/gorm"
 	"math/rand"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 func GetPaymentMethod(db *gorm.DB, paymentMethod string) (interface{}, error) {
@@ -22,7 +23,7 @@ func GetPaymentMethod(db *gorm.DB, paymentMethod string) (interface{}, error) {
 		}
 
 		// Seed random number generator
-		rand.Seed(time.Now().UnixNano())
+		rand.New(rand.NewSource(time.Now().UnixNano()))
 
 		// Select a random card ID from the valid cards
 		randomIndex := rand.Intn(len(cards))

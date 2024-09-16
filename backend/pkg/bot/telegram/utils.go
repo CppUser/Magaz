@@ -9,12 +9,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
+	"time"
+
 	"github.com/mymmrac/telego"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
-	"log"
-	"time"
 )
 
 //TODO: Refactor entire file
@@ -147,6 +148,7 @@ func CheckUserDetails(b *Bot, update telego.Update) (*UserCache, error) {
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		user = models.User{
 			ID:        update.Message.From.ID,
+			ChatID:    update.Message.GetChat().ID,
 			Username:  update.Message.From.Username,
 			FirstName: update.Message.From.FirstName,
 			LastName:  update.Message.From.LastName,

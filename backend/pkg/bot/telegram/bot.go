@@ -2,21 +2,23 @@ package telegram
 
 import (
 	"Magaz/backend/internal/config"
+	"Magaz/backend/internal/repository"
 	"Magaz/backend/internal/storage/crud"
 	"Magaz/backend/internal/storage/models"
+	"Magaz/backend/internal/system/sse"
 	tgconfig "Magaz/backend/pkg/bot/telegram/config"
 	"Magaz/backend/pkg/bot/telegram/handlers"
 	"Magaz/backend/pkg/utils/state/fsm"
-	"errors"
 	"fmt"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/mymmrac/telego"
 	th "github.com/mymmrac/telego/telegohandler"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
-	"strconv"
-	"strings"
-	"time"
 )
 
 // TODO: Remove load from config .
@@ -35,6 +37,7 @@ type Bot struct {
 	Cache            *redis.Client
 	DB               *gorm.DB
 	FSM              *fsm.RuleBasedFSM
+	Hub              *sse.SSEHub
 }
 
 // TODO: refactor code move some logic to handlers
@@ -47,59 +50,6 @@ func (b *Bot) InitBot() {
 	//if err != nil {
 	//	b.Config.Logger.Fatal("Failed to load bot configs", zap.String("error", err.Error()))
 	//}
-
-	////////////////////////////////////////////////////////////////////////////////////////////////
-	//TODO: handle fsm creation in api .i.e. for dynamic conv creation. Possibly generate handlers with go generate instruction
-
-	//sm := fsm.NewFSM(fsm.State(smcfg.States[0].Name))
-	//for _, state := range smcfg.States {
-	//	for _, transition := range state.Transitions {
-	//		sm.AddTransition(fsm.State(state.Name), fsm.Event(transition.Event), fsm.State(transition.To))
-	//	}
-	//
-	//}
-	//
-	//// Set up handlers
-	//for _, handler := range smcfg.Handlers {
-	//	switch handler.Handler {
-	//	case "StartHandler":
-	//		sm.AddHandler(fsm.Event(handler.Event), handlers.StartHandler)
-	//	case "OrderHandler":
-	//		sm.AddHandler(fsm.Event(handler.Event), handlers.OrderHandler)
-	//	case "CityHandler":
-	//
-	//		sm.AddHandler(fsm.Event(handler.Event), handlers.CityHandler)
-	//	case "ProductHandler":
-	//
-	//		sm.AddHandler(fsm.Event(handler.Event), handlers.ProductHandler)
-	//	case "QuantityHandler":
-	//
-	//		sm.AddHandler(fsm.Event(handler.Event), handlers.QuantityHandler)
-	//	case "PaymentHandler":
-	//
-	//		sm.AddHandler(fsm.Event(handler.Event), handlers.PaymentHandler)
-	//	case "ConformationHandler":
-	//
-	//		sm.AddHandler(fsm.Event(handler.Event), handlers.ConformationHandler)
-	//	case "FinalHandler":
-	//
-	//		sm.AddHandler(fsm.Event(handler.Event), handlers.FinalHandler)
-	//	default:
-	//
-	//		log.Fatalf("Unknown handler: %s", handler.Handler)
-	//	}
-	//}
-	//
-	////sm.AddTransition(StateStart, "start", StateCity)
-	////sm.AddTransition(StateCity, "city", StateProduct)
-	////sm.AddTransition(StateProduct, "product", StateStart)
-	////
-	////sm.AddHandler("start", handlers.StartHandler)
-	////sm.AddHandler("city", handlers.CityHandler)
-	////sm.AddHandler("product", handlers.ProductHandler)
-	//b.FSM = sm
-
-	////////////////////////////////////////////////////////////////////////////////////////////////
 
 	bot, err := telego.NewBot(b.Config.Token)
 	if err != nil {
@@ -340,30 +290,34 @@ func (b *Bot) InitBot() {
 			Actions: []fsm.ActionFunc{
 				func(context map[string]interface{}) error {
 					user := context["from"].(telego.User)
+					message := context["message"].(*telego.Message)
 
 					choices, err := GetUserChoices(b.Cache, user.ID)
 					if err != nil {
 						return err
 					}
-					b.Logger.Info("User choices", zap.Any("choices", choices))
-
 					city, _ := crud.GetCityIDByName(b.DB, choices["city"])
 					prID, _ := crud.GetProductIDByCityAndProductName(b.DB, choices["city"], choices["product"])
-
 					qt, _ := strconv.ParseFloat(choices["quantity"], 32)
 
-					var qtnPrice models.QtnPrice
+					var qtnPrice models.QtnPrice //TODO: Refactor
 					// Find the price for the given quantity
 					if err := b.DB.Where("city_product_id = ? AND quantity = ?", prID, qt).First(&qtnPrice).Error; err != nil { //passing wrong city id
 						b.Logger.Error("price not found for the specified quantity", zap.String("error", err.Error()))
 					}
 
 					pmt, _ := crud.GetPaymentMethod(b.DB, choices["payment"])
+					address, _ := repository.GetRandomAddress(b.DB, city, prID, float32(qt), user.ID)
 
-					var message string
+					//TODO: Need to figure out how to store custom quantity
+
+					var msg string
+					order := models.Order{}
+					ordView := repository.OrderView{}
+
 					if choices["payment"] == "card" {
 
-						if err := b.DB.Create(&models.Order{
+						order = models.Order{
 							UserID:            user.ID,
 							CityID:            city,
 							ProductID:         prID,        //Get product from productCityID
@@ -372,20 +326,43 @@ func (b *Bot) InitBot() {
 							PaymentMethodType: choices["payment"],
 							PaymentMethodID:   pmt.(models.Card).ID, //TODO: retrieve from PaymentMethodType name if card from card if crypto from crypto
 							CreatedAt:         time.Now(),
-						}).Error; err != nil {
+							ReleasedAddrID:    &address.ID,
+						}
+
+						if err := b.DB.Create(&order).Error; err != nil {
 							b.Logger.Error("Failed to create new order in DB", zap.String("error", err.Error()))
 						}
 
-						var recentOrder models.Order
-						if err := b.DB.Where("user_id = ?", user.ID).Order("created_at DESC").First(&recentOrder).Error; err != nil {
-							if errors.Is(err, gorm.ErrRecordNotFound) {
-								//return 0, fmt.Errorf("no orders found for user ID: %d", userID)
-								b.Logger.Info("no orders found")
-							}
-							b.Logger.Info("failed to retrieve latest order for user")
+						ordView = repository.OrderView{
+							ID:          order.ID,
+							ProductName: choices["product"],
+							CityName:    choices["city"],
+							Quantity:    float32(qt),
+							Due:         uint(qtnPrice.Price), //TODO: once card implemented need to add all items in cart to due
+							CreatedAt:   time.Now(),
+							Client: repository.UserView{
+								ID:        user.ID,
+								ChatID:    message.GetChat().ID,
+								Username:  user.Username,
+								FirstName: user.FirstName,
+								LastName:  user.LastName,
+							},
+							PaymentMethod: repository.PaymentView{
+								PaymentCategory: "Перевод на карту",
+								CardPayment: repository.CardView{
+									BankName:   pmt.(models.Card).BankName,
+									BankUrl:    pmt.(models.Card).BankURL,
+									CardNumber: pmt.(models.Card).CardNumber,
+									FirstName:  pmt.(models.Card).FirstName,
+									LastName:   pmt.(models.Card).LastName,
+									UserName:   pmt.(models.Card).UserID,
+									Password:   pmt.(models.Card).Password,
+								},
+							},
+							Address: *address,
 						}
 
-						message = fmt.Sprintf(
+						msg = fmt.Sprintf(
 							"Номер заказа #%d\n"+
 								"Город: %s\n"+
 								"Товар: %s\n"+
@@ -398,7 +375,7 @@ func (b *Bot) InitBot() {
 								"Номер карты: %s\n"+
 								"ФИО: %s\n"+
 								"*************************\n",
-							recentOrder.ID,
+							order.ID,
 							choices["city"],
 							choices["product"],
 							choices["quantity"],
@@ -412,9 +389,36 @@ func (b *Bot) InitBot() {
 						//TODO: Implement
 					}
 
-					// Prompt the user to select a quantity
+					//TODO: need to pass orverview instead of order model or add in order model support for json
+					b.Hub.BroadcastMessage(ordView)
 
-					return handlers.EditMessageWithMarkup(bot, message, []handlers.TempMarkup{
+					go func(orderID uint, addrID *uint) {
+						//TODO: Does not work when there is constant ordering , need to find other way to put timer on order
+						//Maybe some database watching system
+						<-time.After(1 * time.Minute)
+
+						order.ReleasedAddrID = nil
+						if err := b.DB.Save(&order).Error; err != nil {
+							b.Logger.Error("Failed to update order status", zap.String("error", err.Error()))
+						}
+
+						if addrID != nil {
+							var addr models.Address
+							if err := b.DB.First(&addr, *addrID).Error; err == nil {
+								addr.Released = false
+								addr.Assigned = false
+								addr.AssignedUserID = nil
+								if err := b.DB.Save(&addr).Error; err != nil {
+									b.Logger.Error("Failed to unassign address", zap.String("error", err.Error()))
+								}
+							}
+						}
+						ordView.Address = repository.AddressView{}
+						b.Hub.BroadcastMessage(ordView)
+
+					}(order.ID, order.ReleasedAddrID)
+
+					return handlers.EditMessageWithMarkup(bot, msg, []handlers.TempMarkup{
 						{Text: "Подтеврдить оплату", CallbackData: "payConf"},
 					})(context)
 				},
