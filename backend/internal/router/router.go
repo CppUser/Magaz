@@ -40,7 +40,12 @@ func SetupRouter(h *handler.Handler) *gin.Engine {
 		empl := api.Group("/empl")
 		{
 			//empl.GET("/orders", h.HEmployeeHandler())
-			empl.GET("/orders", h.EmployeeHandler())
+			//empl.GET("/orders", h.EmployeeHandler())
+
+			//TODO: Move later to api section , since admin might use for communication in future too
+			empl.GET("/ws", h.Upgrade())
+
+			empl.GET("/orders", h.EmployeeHandlerTest())
 			empl.GET("/orders/address", h.GetOrderAddressHandler())
 			empl.POST("/orders/address/assign", h.PostOrderAddressHandler())
 			empl.POST("/orders/release/:orderId", h.ReleaseOrderHandler())
@@ -56,7 +61,8 @@ func SetupRouter(h *handler.Handler) *gin.Engine {
 
 	// Serve static files from the "static" directory
 	//TODO: pass the path from config
-	router.Static("frontend/static", "./frontend/static")
+	router.Static("frontend/v1/static", "./frontend/v1/static")
+	router.Static("frontend/v4/static", "./frontend/v4/static")
 
 	return router
 }

@@ -25,16 +25,3 @@ func (h *Handler) BotRequestHandler() gin.HandlerFunc {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	}
 }
-
-//
-//// safeSend safely send to chan and return true if chan was closed
-//func safeSend[T any](ch chan<- T, value T) (closed bool) {
-//	defer func() {
-//		if recover() != nil {
-//			closed = true
-//		}
-//	}()
-//
-//	ch <- value
-//	return false
-//}

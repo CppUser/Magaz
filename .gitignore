@@ -2,6 +2,7 @@
 *.yaml
 .vs/
 /backend/storage
+/tmp
 
 # bootstrap files
 /frontend/static/css/bootstrap
@@ -9,3 +10,4 @@
 /frontend/static/images/bootstrap
 /frontend/static/js/bootstrap
 
+/frontend/templates/pages/employee.page2.gohtml

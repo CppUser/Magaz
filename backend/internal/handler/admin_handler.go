@@ -36,7 +36,7 @@ func (h *Handler) GetProductsAdminHandler() gin.HandlerFunc {
 
 		tmpl := h.TmplCache["admin.page.gohtml"]
 
-		citiesWithProducts, err := repository.FetchCityProducts(h.DB)
+		citiesWithProducts, err := repository.FetchCityProcdducts(h.DB)
 		if err != nil {
 			h.Logger.Error("Failed to fetch city products", zap.Error(err))
 			c.String(http.StatusInternalServerError, "Failed to load city products")

@@ -5,7 +5,7 @@ import (
 	"Magaz/backend/internal/handler"
 	"Magaz/backend/internal/router"
 	"Magaz/backend/internal/storage/models"
-	"Magaz/backend/internal/system/sse"
+	"Magaz/backend/internal/system/websocket"
 	"Magaz/backend/internal/utils"
 	"Magaz/backend/pkg/bot/telegram"
 	"Magaz/backend/pkg/client/postgres"
@@ -33,18 +33,23 @@ func main() {
 		log.Fatalf("Failed to load API configs: %v", err)
 	}
 
+	h := handler.NewHandler(cfg)
+
 	zaplog, _ := logger.InitLogger(cfg.Env)
+	h.Logger = zaplog
 
 	rdb, rdberr := redis.InitRedisClient(&cfg.Redis) //TODO: assign to var
 	if rdberr != nil {
 		zaplog.Fatal("Failed to connect to Redis", zap.String("error", rdberr.Error()))
 	}
+	h.Redis = rdb
 
 	db, dberr := postgres.Connect(cfg.Database)
 	if dberr != nil {
 		zaplog.Fatal("Failed to connect to DB", zap.String("error", dberr.Error()))
 
 	}
+	h.DB = db
 
 	///////////////////////////////////////////////////////////////////////////////
 	// Migrate the database models
@@ -61,6 +66,12 @@ func main() {
 	//	zaplog.Fatal("Failed to migrate database schema", zap.Error(err))
 	//}
 
+	tempalteCache, err := handler.CreateTemplateCache(cfg.CacheDir.Layouts, cfg.CacheDir.Pages)
+	if err != nil {
+		zaplog.Fatal("Failed to create template cache", zap.Error(err))
+	}
+	h.TmplCache = tempalteCache
+
 	sessionKey := cfg.ScrKey
 	if sessionKey == "" {
 		sessionKey, err = utils.GenerateRandomKey(32)
@@ -70,9 +81,12 @@ func main() {
 	}
 	// Initialize the session store with the retrieved or generated session key
 	store := sessions.NewCookieStore([]byte(sessionKey))
+	h.Session = store
 
-	hub := sse.NewSSEHub(db, zaplog)
-	go hub.Run()
+	//hub := sse.NewSSEHub(db, zaplog)
+	//go hub.Run()
+	wscon := ws.NewManager(zaplog)
+	h.WS = wscon
 
 	//TODO: passing to handler initialized clients like redis and db . Pass handler instead ?
 	bot := telegram.Bot{
@@ -81,28 +95,13 @@ func main() {
 		UpdateChanBuffer: 128, // Buffer size is 128 default
 		Cache:            rdb,
 		DB:               db,
-		Hub:              hub,
+		//WS:               ws,
+		//Hub:              hub,
 	}
 	bot.InitBot()
+	h.Bot = &bot
 
-	tempalteCache, err := handler.CreateTemplateCache(cfg.CacheDir.Layouts, cfg.CacheDir.Pages)
-	if err != nil {
-		zaplog.Fatal("Failed to create template cache", zap.Error(err))
-	}
-
-	h := handler.Handler{
-		Api:       cfg,
-		Logger:    zaplog,
-		Bot:       &bot,
-		Redis:     rdb,
-		DB:        db,
-		TmplCache: tempalteCache,
-		Session:   store,
-		SSES:      hub,
-	}
-	//handler.NewHandler(h)
-
-	rh := router.SetupRouter(&h)
+	rh := router.SetupRouter(h)
 
 	go bot.ReceiveUpdates() //TODO: no the best approach find other way to handle updates
 

@@ -1,0 +1,47 @@
+
+{{define "title"}}Employee Page{{end}}
+
+{{define "styles"}}{{end}}
+{{define "scripts"}}
+    <script src="https://unpkg.com/htmx.org@1.9.12/dist/ext/ws.js"></script>
+    <script defer src="/frontend/v4/static/js/ws/ext_ws.js"></script>
+
+{{end}}
+
+{{define "navigation"}}
+    <!-- Sidebar section -->
+    <aside>
+
+    </aside>
+    <!--End Sidebar section -->
+{{end}}
+
+{{define "content"}}
+    <!-- Main Content section -->
+    <main>
+        <h1>Заказы</h1>
+        <div id="orders" class="orders">
+
+            <!-- Message input field and button -->
+            <form id="messageForm">
+                <label for="message">Message:</label>
+                <input type="text" id="message" name="message" required>
+                <button type="submit">Send Message</button>
+            </form>
+
+            <!-- WebSocket output display -->
+            <h2>Messages</h2>
+            <div id="messages"></div>
+
+
+        </div>
+    </main>
+    <!-- End Main Content section -->
+
+{{end}}
+
+
+
+{{define "footer"}}{{end}}
+
+{{template "base" .}}

@@ -5,7 +5,6 @@ import (
 	"Magaz/backend/internal/repository"
 	"Magaz/backend/internal/storage/crud"
 	"Magaz/backend/internal/storage/models"
-	"Magaz/backend/internal/system/sse"
 	tgconfig "Magaz/backend/pkg/bot/telegram/config"
 	"Magaz/backend/pkg/bot/telegram/handlers"
 	"Magaz/backend/pkg/utils/state/fsm"
@@ -21,13 +20,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// TODO: Remove load from config .
-const (
-	StateStart   fsm.State = "start"
-	StateCity    fsm.State = "city"
-	StateProduct fsm.State = "product"
-)
-
 type Bot struct {
 	Config           *config.TGBotConfig
 	API              *telego.Bot
@@ -37,7 +29,9 @@ type Bot struct {
 	Cache            *redis.Client
 	DB               *gorm.DB
 	FSM              *fsm.RuleBasedFSM
-	Hub              *sse.SSEHub
+	//WS               *ws.Manager
+	//Hub              *sse.SSEHub
+
 }
 
 // TODO: refactor code move some logic to handlers
@@ -390,7 +384,7 @@ func (b *Bot) InitBot() {
 					}
 
 					//TODO: need to pass orverview instead of order model or add in order model support for json
-					b.Hub.BroadcastMessage(ordView)
+					//b.WS.BroadcastOrder(ordView)
 
 					go func(orderID uint, addrID *uint) {
 						//TODO: Does not work when there is constant ordering , need to find other way to put timer on order
@@ -414,7 +408,7 @@ func (b *Bot) InitBot() {
 							}
 						}
 						ordView.Address = repository.AddressView{}
-						b.Hub.BroadcastMessage(ordView)
+						//b.WS.BroadcastOrder(ordView)
 
 					}(order.ID, order.ReleasedAddrID)
 
@@ -454,8 +448,8 @@ func (b *Bot) InitBot() {
 
 }
 
-// TODO: name properly
-func (b *Bot) ReceiveUpdates() {
+// ReceiveUpdates handle receiving messages
+func (b *Bot) ReceiveUpdates() { // TODO: name properly
 
 	bh, _ := th.NewBotHandler(b.API, b.UpdatesChan)
 

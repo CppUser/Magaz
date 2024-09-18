@@ -8,8 +8,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
-	"path/filepath"
 	"sort"
 	"strconv"
 	"time"
@@ -111,127 +109,26 @@ func (h *Handler) HEmployeeHandler() gin.HandlerFunc {
 }
 
 // EmployeeHandler handles the incoming requests from the employee
-func (h *Handler) EmployeeHandler() gin.HandlerFunc {
+
+//func (h *Handler) EmployeeWSHandler() gin.HandlerFunc {
+//	return func(c *gin.Context) {
+//
+//		_, err := h.WS.Upgrade(c)
+//		if err != nil {
+//			return
+//		}
+//
+//	}
+//}
+
+func (h *Handler) EmployeeHandlerTest() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		// Check if this is an SSE connection or a regular request
-		acceptHeader := c.GetHeader("Accept")
-		if acceptHeader == "text/event-stream" {
-			// This is an SSE request
-			clientChan := make(chan interface{})
-			h.SSES.Register <- clientChan
-			defer func() {
-				h.SSES.Unregister <- clientChan
-			}()
-
-			// Set the headers for SSE
-			c.Writer.Header().Set("Content-Type", "text/event-stream")
-			c.Writer.Header().Set("Cache-Control", "no-cache")
-			c.Writer.Header().Set("Connection", "keep-alive")
-			c.Writer.Header().Set("Transfer-Encoding", "chunked")
-
-			// Keep the connection open and send updates as they arrive
-			for {
-				select {
-				case message := <-clientChan:
-					_, _ = fmt.Fprintf(c.Writer, "data: %s\n\n", dataToJSON(message))
-					c.Writer.Flush()
-				case <-c.Writer.CloseNotify():
-					return
-				}
-			}
-		}
-
 		// This is a regular HTTP request, so render the template with initial data
-		tmpl := h.TmplCache["employee.page.gohtml"]
-
-		// Fetch the initial orders
-		orders, err := crud.GetAll[models.Order](h.DB)
-		if err != nil {
-			h.Logger.Error("Failed to fetch orders from database", zap.Error(err))
-			c.String(http.StatusInternalServerError, "Failed to load orders")
-			return
-		}
-
-		var orderViews []repository.OrderView
-		for _, ords := range orders {
-			if !ords.Released {
-				product, _ := crud.Get[models.Product, uint](h.DB, ords.ProductID)
-				city, _ := crud.Get[models.City, uint](h.DB, ords.CityID)
-				user, _ := crud.Get[models.User, int64](h.DB, ords.UserID)
-				cardPayment, _ := crud.Get[models.Card, uint](h.DB, ords.PaymentMethodID)
-				//cryptoPayment,_ := crud.Get[models.Crypto,uint](h.DB,ords.PaymentMethodID)
-
-				var payment repository.PaymentView
-				if ords.PaymentMethodType == "card" {
-					payment = repository.PaymentView{
-						PaymentCategory: "Перевод на карту",
-						CardPayment: repository.CardView{
-							BankName:   cardPayment.BankName,
-							BankUrl:    cardPayment.BankURL,
-							CardNumber: cardPayment.CardNumber,
-							FirstName:  cardPayment.FirstName,
-							LastName:   cardPayment.LastName,
-							UserName:   cardPayment.UserID,
-							Password:   cardPayment.Password,
-						},
-					}
-				} else if ords.PaymentMethodType == "crypto" { //TODO: Fill crypto payment
-					payment = repository.PaymentView{
-						PaymentCategory: "Крипто валюта",
-						CryptoPayment:   repository.CryptoView{},
-					}
-				}
-
-				var addrView repository.AddressView
-
-				addr, err := crud.Get[models.Address, *uint](h.DB, ords.ReleasedAddrID)
-				if err != nil || addr == nil {
-					addrView = repository.AddressView{}
-				} else {
-					addrView = repository.AddressView{
-						ID:          addr.ID,
-						City:        city.Name,
-						Product:     product.Name,
-						Quantity:    ords.Quantity,
-						Description: addr.Description,
-						Image:       addr.Image,
-						AddedAt:     addr.AddedAt,
-					}
-				}
-
-				orderView := repository.OrderView{
-					ID:          ords.ID,
-					ProductName: product.Name,
-					CityName:    city.Name,
-					Quantity:    ords.Quantity,
-					Due:         ords.Due,
-					CreatedAt:   ords.CreatedAt,
-					Client: repository.UserView{
-						ID:        user.ID,
-						ChatID:    user.ChatID,
-						Username:  user.Username,
-						FirstName: user.FirstName,
-						LastName:  user.LastName,
-					},
-					PaymentMethod: payment,
-					Address:       addrView,
-				}
-
-				// Append the orderView to the slice
-				orderViews = append(orderViews, orderView)
-			}
-
-		}
-
-		// Pass the initial orders to the template
-		data := gin.H{
-			"Title":  "Employee Orders",
-			"Orders": orderViews,
-		}
+		tmpl := h.TmplCache["emp.page.gohtml"]
 
 		if tmpl != nil {
-			if err := tmpl.ExecuteTemplate(c.Writer, "base", data); err != nil {
+			if err := tmpl.ExecuteTemplate(c.Writer, "base", nil); err != nil {
 				h.Logger.Error("Error executing template", zap.Error(err))
 				c.String(http.StatusInternalServerError, "Error executing template: %v", err)
 				return
@@ -541,18 +438,6 @@ func fetchOrdersFromDB(db *gorm.DB) ([]models.Order, error) {
 		return nil, err
 	}
 	return orders, nil
-}
-
-func mustOpen(filename string) *os.File {
-	cwd, _ := os.Getwd()
-
-	filePath := filepath.Join(cwd, filename)
-
-	file, err := os.Open(filePath)
-	if err != nil {
-		panic(fmt.Sprintf("Failed to open file: %s, error: %v", filePath, err))
-	}
-	return file
 }
 
 func createOrderView(db *gorm.DB, order models.Order) repository.OrderView {

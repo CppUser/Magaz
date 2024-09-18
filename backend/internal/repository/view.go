@@ -32,7 +32,7 @@ type CityWithProductsView struct {
 	Products []ProductView
 }
 
-func FetchCityProducts(db *gorm.DB) ([]CityWithProductsView, error) {
+func FetchCityProcdducts(db *gorm.DB) ([]CityWithProductsView, error) {
 	var cityProducts []models.CityProduct
 
 	//
