@@ -41,6 +41,7 @@ func (h *Handler) POSTLoginHandler() gin.HandlerFunc {
 			session.Values["authenticated"] = true
 			session.Save(c.Request, c.Writer)
 
+			//TODO: Redirect based on role
 			// Redirect to the admin page after successful login
 			c.Redirect(http.StatusFound, "/api/admin")
 			return

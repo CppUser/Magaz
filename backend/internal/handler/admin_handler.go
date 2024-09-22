@@ -30,6 +30,25 @@ func (h *Handler) AdminHandler() gin.HandlerFunc {
 	}
 }
 
+func (h *Handler) AdminStatisticsHandler() gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		tmpl := h.TmplCache["admin.page.gohtml"]
+
+		if tmpl != nil {
+			err := tmpl.ExecuteTemplate(c.Writer, "base", nil)
+			if err != nil {
+				h.Logger.Error("Error executing template", zap.Error(err))
+				c.String(http.StatusInternalServerError, "Error executing template: %v", err)
+			}
+		} else {
+			h.Logger.Error("Template not found", zap.String("template", "admin.page.gohtml"))
+			c.String(http.StatusInternalServerError, "Template not found")
+		}
+
+	}
+}
+
 // // GetProductsAdminHandler handles the incoming requests from the admin
 func (h *Handler) GetProductsAdminHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -49,7 +68,7 @@ func (h *Handler) GetProductsAdminHandler() gin.HandlerFunc {
 		}
 
 		if tmpl != nil {
-			err := tmpl.ExecuteTemplate(c.Writer, "base", data)
+			err := tmpl.ExecuteTemplate(c.Writer, "product_section", data)
 			if err != nil {
 				h.Logger.Error("Error executing template", zap.Error(err))
 				c.String(http.StatusInternalServerError, "Error executing template: %v", err)
@@ -58,22 +77,6 @@ func (h *Handler) GetProductsAdminHandler() gin.HandlerFunc {
 			h.Logger.Error("Template not found", zap.String("template", "admin.page.gohtml"))
 			c.String(http.StatusInternalServerError, "Template not found")
 		}
-
-		//tmpl, err := template.ParseFiles("./web/templates/base.layout.gohtml", "./web/templates/admin.page.gohtml")
-		//if err != nil {
-		//	c.String(http.StatusInternalServerError, "Error parsing template: %v", err)
-		//	return
-		//}
-		//
-		//data := gin.H{
-		//	"Title": "Admin Page",
-		//	"Body":  "This is the admin page content.",
-		//}
-		//
-		//// Ensure correct template execution
-		//if err := tmpl.ExecuteTemplate(c.Writer, "base", data); err != nil {
-		//	c.String(http.StatusInternalServerError, "Error executing template: %v", err)
-		//}
 
 	}
 }
@@ -231,6 +234,82 @@ func (h *Handler) PostAdminAddProductAddr() gin.HandlerFunc {
 		}
 
 		c.JSON(http.StatusOK, gin.H{"message": "Item added successfully!"})
+
+	}
+}
+
+func (h *Handler) AdminOrdersHandler() gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		tmpl := h.TmplCache["admin.page.gohtml"]
+
+		if tmpl != nil {
+			err := tmpl.ExecuteTemplate(c.Writer, "base", nil)
+			if err != nil {
+				h.Logger.Error("Error executing template", zap.Error(err))
+				c.String(http.StatusInternalServerError, "Error executing template: %v", err)
+			}
+		} else {
+			h.Logger.Error("Template not found", zap.String("template", "admin.page.gohtml"))
+			c.String(http.StatusInternalServerError, "Template not found")
+		}
+
+	}
+}
+
+func (h *Handler) AdminDisputesHandler() gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		tmpl := h.TmplCache["admin.page.gohtml"]
+
+		if tmpl != nil {
+			err := tmpl.ExecuteTemplate(c.Writer, "base", nil)
+			if err != nil {
+				h.Logger.Error("Error executing template", zap.Error(err))
+				c.String(http.StatusInternalServerError, "Error executing template: %v", err)
+			}
+		} else {
+			h.Logger.Error("Template not found", zap.String("template", "admin.page.gohtml"))
+			c.String(http.StatusInternalServerError, "Template not found")
+		}
+
+	}
+}
+
+func (h *Handler) AdminChatHandler() gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		tmpl := h.TmplCache["admin.page.gohtml"]
+
+		if tmpl != nil {
+			err := tmpl.ExecuteTemplate(c.Writer, "base", nil)
+			if err != nil {
+				h.Logger.Error("Error executing template", zap.Error(err))
+				c.String(http.StatusInternalServerError, "Error executing template: %v", err)
+			}
+		} else {
+			h.Logger.Error("Template not found", zap.String("template", "admin.page.gohtml"))
+			c.String(http.StatusInternalServerError, "Template not found")
+		}
+
+	}
+}
+
+func (h *Handler) AdminSettingsHandler() gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		tmpl := h.TmplCache["admin.page.gohtml"]
+
+		if tmpl != nil {
+			err := tmpl.ExecuteTemplate(c.Writer, "base", nil)
+			if err != nil {
+				h.Logger.Error("Error executing template", zap.Error(err))
+				c.String(http.StatusInternalServerError, "Error executing template: %v", err)
+			}
+		} else {
+			h.Logger.Error("Template not found", zap.String("template", "admin.page.gohtml"))
+			c.String(http.StatusInternalServerError, "Template not found")
+		}
 
 	}
 }

@@ -8,9 +8,9 @@ type Order struct {
 	UserID            int64     `gorm:""`
 	User              *User     `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;"`
 	CityID            uint      `gorm:"not null"`
-	City              City      `gorm:"foreignKey:CityID;constraint:OnDelete:CASCADE;"`
+	City              City      `gorm:"foreignKey:CityID;constraint:OnDelete:CASCADE;"` //TODO: must be a pointer to city
 	ProductID         uint      `gorm:"not null"`
-	Product           Product   `gorm:"foreignKey:ProductID;constraint:OnDelete:CASCADE;"`
+	Product           Product   `gorm:"foreignKey:ProductID;constraint:OnDelete:CASCADE;"` //TODO: must be a pointer to product
 	Quantity          float32   `gorm:"not null" json:"quantity"`
 	Due               uint      `gorm:"not null" json:"due"`
 	PaymentMethodType string    `gorm:"size:100;not null" json:"paymentMethodType"` // e.g., "Card", "Crypto"

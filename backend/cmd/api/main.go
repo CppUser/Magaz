@@ -85,7 +85,7 @@ func main() {
 
 	//hub := sse.NewSSEHub(db, zaplog)
 	//go hub.Run()
-	wscon := ws.NewManager(zaplog)
+	wscon := ws.NewManager(zaplog, db)
 	h.WS = wscon
 
 	//TODO: passing to handler initialized clients like redis and db . Pass handler instead ?
@@ -95,7 +95,7 @@ func main() {
 		UpdateChanBuffer: 128, // Buffer size is 128 default
 		Cache:            rdb,
 		DB:               db,
-		//WS:               ws,
+		WS:               wscon,
 		//Hub:              hub,
 	}
 	bot.InitBot()

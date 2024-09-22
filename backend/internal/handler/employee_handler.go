@@ -124,6 +124,39 @@ func (h *Handler) HEmployeeHandler() gin.HandlerFunc {
 func (h *Handler) EmployeeHandlerTest() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
+		// Send existing orders immediately after client connects
+		orders, err := repository.GetUnreleasedOrders(h.DB)
+		if err != nil {
+			h.SSES.Logger.Error("Failed to fetch orders from database", zap.Error(err))
+			return
+		}
+
+		sort.Slice(orders, func(i, j int) bool {
+			return orders[i].ID < orders[j].ID
+		})
+
+		data := gin.H{
+			"Orders": orders,
+		}
+
+		// This is a regular HTTP request, so render the template with initial data
+		tmpl := h.TmplCache["emp.page.gohtml"]
+
+		if tmpl != nil {
+			if err := tmpl.ExecuteTemplate(c.Writer, "base", data); err != nil {
+				h.Logger.Error("Error executing template", zap.Error(err))
+				c.String(http.StatusInternalServerError, "Error executing template: %v", err)
+				return
+			}
+		} else {
+			h.Logger.Error("Template not found", zap.String("template", "employee.page.gohtml"))
+			c.String(http.StatusInternalServerError, "Template not found")
+		}
+	}
+}
+func (h *Handler) GetStatisticsHandler() gin.HandlerFunc {
+	return func(c *gin.Context) {
+
 		// This is a regular HTTP request, so render the template with initial data
 		tmpl := h.TmplCache["emp.page.gohtml"]
 
@@ -157,9 +190,9 @@ func (h *Handler) GetOrderHandler() gin.HandlerFunc { //TODO: rename BroadcastLa
 		c.Writer.Header().Set("Transfer-Encoding", "chunked")
 
 		// Send existing orders immediately after client connects
-		orders, err := fetchOrdersFromDB(h.SSES.DB)
+		orders, err := fetchOrdersFromDB(h.DB)
 		if err != nil {
-			h.SSES.Logger.Error("Failed to fetch orders from database", zap.Error(err))
+			h.Logger.Error("Failed to fetch orders from database", zap.Error(err))
 			return
 		}
 		_, _ = fmt.Fprintf(c.Writer, "data: %s\n\n", dataToJSON(orders))
@@ -373,7 +406,6 @@ func (h *Handler) PostOrderAddressHandler() gin.HandlerFunc {
 			},
 		}
 
-		// Broadcast real-time update (SSE, WebSocket, etc.)
 		h.SSES.BroadcastMessage(orderView)
 
 		c.JSON(http.StatusOK, gin.H{
@@ -381,6 +413,82 @@ func (h *Handler) PostOrderAddressHandler() gin.HandlerFunc {
 			"order":   orderView,
 		})
 
+	}
+}
+
+func (h *Handler) GetDisputesHandler() gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		// This is a regular HTTP request, so render the template with initial data
+		tmpl := h.TmplCache["emp.page.gohtml"]
+
+		if tmpl != nil {
+			if err := tmpl.ExecuteTemplate(c.Writer, "base", nil); err != nil {
+				h.Logger.Error("Error executing template", zap.Error(err))
+				c.String(http.StatusInternalServerError, "Error executing template: %v", err)
+				return
+			}
+		} else {
+			h.Logger.Error("Template not found", zap.String("template", "employee.page.gohtml"))
+			c.String(http.StatusInternalServerError, "Template not found")
+		}
+	}
+}
+
+func (h *Handler) GetChatHandler() gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		// This is a regular HTTP request, so render the template with initial data
+		tmpl := h.TmplCache["emp.page.gohtml"]
+
+		if tmpl != nil {
+			if err := tmpl.ExecuteTemplate(c.Writer, "base", nil); err != nil {
+				h.Logger.Error("Error executing template", zap.Error(err))
+				c.String(http.StatusInternalServerError, "Error executing template: %v", err)
+				return
+			}
+		} else {
+			h.Logger.Error("Template not found", zap.String("template", "employee.page.gohtml"))
+			c.String(http.StatusInternalServerError, "Template not found")
+		}
+	}
+}
+
+func (h *Handler) GetSettingsHandler() gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		// This is a regular HTTP request, so render the template with initial data
+		tmpl := h.TmplCache["emp.page.gohtml"]
+
+		if tmpl != nil {
+			if err := tmpl.ExecuteTemplate(c.Writer, "base", nil); err != nil {
+				h.Logger.Error("Error executing template", zap.Error(err))
+				c.String(http.StatusInternalServerError, "Error executing template: %v", err)
+				return
+			}
+		} else {
+			h.Logger.Error("Template not found", zap.String("template", "employee.page.gohtml"))
+			c.String(http.StatusInternalServerError, "Template not found")
+		}
+	}
+}
+
+func (h *Handler) GetQuitHandler() gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		// This is a regular HTTP request, so render the template with initial data
+		tmpl := h.TmplCache["emp.page.gohtml"]
+
+		if tmpl != nil {
+			if err := tmpl.ExecuteTemplate(c.Writer, "base", nil); err != nil {
+				h.Logger.Error("Error executing template", zap.Error(err))
+				c.String(http.StatusInternalServerError, "Error executing template: %v", err)
+				return
+			}
+		} else {
+			h.Logger.Error("Template not found", zap.String("template", "employee.page.gohtml"))
+			c.String(http.StatusInternalServerError, "Template not found")
+		}
 	}
 }
 

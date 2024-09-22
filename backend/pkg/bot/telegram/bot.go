@@ -5,6 +5,7 @@ import (
 	"Magaz/backend/internal/repository"
 	"Magaz/backend/internal/storage/crud"
 	"Magaz/backend/internal/storage/models"
+	ws "Magaz/backend/internal/system/websocket"
 	tgconfig "Magaz/backend/pkg/bot/telegram/config"
 	"Magaz/backend/pkg/bot/telegram/handlers"
 	"Magaz/backend/pkg/utils/state/fsm"
@@ -29,7 +30,7 @@ type Bot struct {
 	Cache            *redis.Client
 	DB               *gorm.DB
 	FSM              *fsm.RuleBasedFSM
-	//WS               *ws.Manager
+	WS               *ws.Manager
 	//Hub              *sse.SSEHub
 
 }
@@ -384,7 +385,7 @@ func (b *Bot) InitBot() {
 					}
 
 					//TODO: need to pass orverview instead of order model or add in order model support for json
-					//b.WS.BroadcastOrder(ordView)
+					b.WS.BroadcastOrder(ordView)
 
 					go func(orderID uint, addrID *uint) {
 						//TODO: Does not work when there is constant ordering , need to find other way to put timer on order
@@ -408,7 +409,7 @@ func (b *Bot) InitBot() {
 							}
 						}
 						ordView.Address = repository.AddressView{}
-						//b.WS.BroadcastOrder(ordView)
+						b.WS.BroadcastOrder(ordView)
 
 					}(order.ID, order.ReleasedAddrID)
 

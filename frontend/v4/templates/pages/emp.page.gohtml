@@ -1,47 +1,203 @@
 
 {{define "title"}}Employee Page{{end}}
 
-{{define "styles"}}{{end}}
+{{define "styles"}}
+    <link rel="preload" href="/frontend/v1/static/css/bootstrap/bootstrap.min.css" as="style">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="/frontend/v4/static/css/empl/style.css">
+{{end}}
 {{define "scripts"}}
     <script src="https://unpkg.com/htmx.org@1.9.12/dist/ext/ws.js"></script>
     <script defer src="/frontend/v4/static/js/ws/ext_ws.js"></script>
-
 {{end}}
 
 {{define "navigation"}}
     <!-- Sidebar section -->
-    <aside>
-
-    </aside>
+    <div class="sidebar">
+        <i class='bx bx-menu'></i>
+        <ul class="side-menu">
+            <li><a href="#"><i class='bx bxs-dashboard'></i>Статистика</a></li>
+            <li class="active"><a href="#" ><i class='bx bx-analyse'></i>Заказы</a></li>
+            <li><a href="#" ><i class='bx bx-message-square-dots'></i>Диспуты</a></li>
+            <li><a href="#" ><i class='bx bx-group'></i>Чат</a></li>
+            <li><a href="#"><i class='bx bx-cog' ></i>Настройки</a></li>
+        </ul>
+        <ul class="side-menu">
+            <li>
+                <a href="#" class="logout">
+                    <i class='bx bx-log-out-circle'></i>
+                    Выйти
+                </a>
+            </li>
+        </ul>
+    </div>
     <!--End Sidebar section -->
 {{end}}
 
 {{define "content"}}
-    <!-- Main Content section -->
-    <main>
-        <h1>Заказы</h1>
-        <div id="orders" class="orders">
+    <div class="content">
+        <!-- Navbar -->
+        <nav>
+            <input type="checkbox" id="theme-toggle" hidden>
+            <label for="theme-toggle" class="theme-toggle"></label>
+            <a href="#" class="notif">
+                <i class='bx bx-bell'></i>
+                <span class="count">12</span>
+            </a>
+        </nav>
+        <!-- End of Navbar -->
 
-            <!-- Message input field and button -->
-            <form id="messageForm">
-                <label for="message">Message:</label>
-                <input type="text" id="message" name="message" required>
-                <button type="submit">Send Message</button>
-            </form>
+        <main>
+            <div class="content-section">
+                <!--Statistics section -->
+                <div id="sts" class="statistics" style="display: none">
+                    <div class="header">
+                        <div class="left">
+                            <h1>Статистика</h1>
+                        </div>
+                    </div>
 
-            <!-- WebSocket output display -->
-            <h2>Messages</h2>
-            <div id="messages"></div>
+                </div>
+                <!--End Statistics section -->
 
+                <!--Orders section -->
+                <div id="ords" class="orders" style="display: block">
+                <div class="header">
+                    <div class="left">
+                        <h1>Заказы</h1>
+                    </div>
+                </div>
 
-        </div>
-    </main>
-    <!-- End Main Content section -->
+                <!-- Insights -->
+                <ul class="insights">
+                <li>
+                    <i class='bx bx-cart-download'></i>
+                    <span class="info">
+                        <h3>
+                            1,074
+                        </h3>
+                        <p>Новые заказы</p>
+                    </span>
+                </li>
+                <li><i class='bx bx-time-five'></i>
+                    <span class="info">
+                        <h3>
+                            3,944
+                        </h3>
+                        <p>В ожидании</p>
+                    </span>
+                </li>
+                <li><i class='bx bx-x-circle'></i>
+                    <span class="info">
+                        <h3>
+                            14,721
+                        </h3>
+                        <p>Отмененные</p>
+                    </span>
+                </li>
+                <li><i class='bx bx-check-circle'></i>
+                    <span class="info">
+                        <h3>
+                            $6,742
+                        </h3>
+                        <p>Завершенные</p>
+                    </span>
+                </li>
+            </ul>
+                <!-- End of Insights -->
 
+                <div class="bottom-data">
+                <div class="orders">
+                    <div class="header">
+                        <i class='bx bx-receipt'></i>
+                        <h3>Новые заказы</h3>
+                        <i class='bx bx-filter'></i>
+                    </div>
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Город</th>
+                            <th>Продукт</th>
+                            <th>Количество</th>
+                            <th>К оплате</th>
+                            <th>Клиент</th>
+                            <th>Создан</th>
+                        </tr>
+                        </thead>
+                        <tbody id="orders-tbody">
+                        {{range .Orders}}
+                            <tr onclick="toggleRowDetails({{.}},this)">
+                                <td>{{.ID}}</td>
+                                <td>{{.CityName}}</td>
+                                <td>{{.ProductName}}</td>
+                                <td>{{.Quantity}}</td>
+                                <td>{{.Due}}</td>
+                                <td>{{.Client.Username}}</td>
+                                <td>{{.CreatedAt.Format "2006-01-02 15:04:05"}}</td>
+                            </tr>
+                        {{end}}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+                </div>
+                <!--End Order section -->
+
+                <!--Disputes section -->
+                <div id="dis" class="disputes" style="display: none">
+                    <div class="header">
+                        <div class="left">
+                            <h1>Диспуты</h1>
+                        </div>
+                    </div>
+                </div>
+                <!--End Disputes section -->
+
+                <!--Chat section -->
+                <div id="cht" class="chat" style="display: none">
+                    <div class="header">
+                        <div class="left">
+                            <h1>Чат</h1>
+                        </div>
+                    </div>
+                </div>
+                <!--End Chat section -->
+
+                <!--Settings section -->
+                <div id="stg" class="settings" style="display: none">
+                    <div class="header">
+                        <div class="left">
+                            <h1>Настройки</h1>
+                        </div>
+                    </div>
+                </div>
+                <!--End Settings section -->
+
+            </div>
+
+            <!-- Side Window for Order Details -->
+            <div id="side-window" class="side-window">
+
+                <button class="close-btn" onclick="closeSideWindow()">
+                    <i class="bx bxs-x-square"></i>
+                </button>
+                <div id="order-details"> <!--Use HTMX to swap -->
+                    <!-- Order details will be dynamically loaded here -->
+
+                </div>
+            </div>
+        </main>
+
+    </div>
 {{end}}
 
 
 
 {{define "footer"}}{{end}}
+{{define "js"}}
+    <script src="/frontend/v4/static/js/empl/index.js"></script>
+    <script defer src="/frontend/v1/static/js/bootstrap/bootstrap.bundle.min.js"></script>
+{{end}}
 
 {{template "base" .}}

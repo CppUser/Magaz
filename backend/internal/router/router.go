@@ -31,6 +31,11 @@ func SetupRouter(h *handler.Handler) *gin.Engine {
 		admin := api.Group("/admin")
 		{
 			admin.GET("/", h.AdminHandler())
+			admin.GET("/statistics", h.AdminStatisticsHandler())
+			admin.GET("/orders", h.AdminOrdersHandler())
+			admin.GET("/disputes", h.AdminDisputesHandler())
+			admin.GET("/chat", h.AdminDisputesHandler())
+			admin.GET("/settings", h.AdminSettingsHandler())
 			admin.GET("/products/getProducts", h.GetProductsAdminHandler())
 			admin.POST("/products/add-product", h.PostAdminAddProduct())
 			admin.POST("/products/addProdAddr", h.PostAdminAddProductAddr()) //TODO:Rename o address
@@ -45,7 +50,13 @@ func SetupRouter(h *handler.Handler) *gin.Engine {
 			//TODO: Move later to api section , since admin might use for communication in future too
 			empl.GET("/ws", h.Upgrade())
 
+			//TODO: Refactor find better way to use routing (pattern ?)
+			empl.GET("/statistics", h.GetStatisticsHandler())
 			empl.GET("/orders", h.EmployeeHandlerTest())
+			empl.GET("/disputes", h.GetDisputesHandler())
+			empl.GET("/chat", h.GetChatHandler())
+			empl.GET("/settings", h.GetSettingsHandler())
+			empl.GET("/quit", h.GetQuitHandler())
 			empl.GET("/orders/address", h.GetOrderAddressHandler())
 			empl.POST("/orders/address/assign", h.PostOrderAddressHandler())
 			empl.POST("/orders/release/:orderId", h.ReleaseOrderHandler())

@@ -119,6 +119,7 @@ func (h *Handler) Upgrade() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		websocketUpgrader := websocket.Upgrader{
+			CheckOrigin:     checkOrigin,
 			ReadBufferSize:  1024,
 			WriteBufferSize: 1024,
 		}
@@ -140,5 +141,17 @@ func (h *Handler) Upgrade() gin.HandlerFunc {
 		//	return nil
 		//})
 
+	}
+}
+
+// TODO: IMPORTANT CORS implement in env to allow who can connect
+func checkOrigin(r *http.Request) bool { //TODO: Adjust in env variable to allow origin connections
+	origin := r.Header.Get("Origin")
+
+	switch origin {
+	case "https://9e4f-73-192-67-43.ngrok-free.app": //TODO:retrieve from env
+		return true
+	default:
+		return false
 	}
 }
