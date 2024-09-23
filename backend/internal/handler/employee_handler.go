@@ -7,6 +7,7 @@ import (
 	"Magaz/backend/internal/storage/models"
 	"encoding/json"
 	"fmt"
+	"github.com/mymmrac/telego"
 	"net/http"
 	"sort"
 	"strconv"
@@ -127,9 +128,11 @@ func (h *Handler) EmployeeHandlerTest() gin.HandlerFunc {
 		// Send existing orders immediately after client connects
 		orders, err := repository.GetUnreleasedOrders(h.DB)
 		if err != nil {
-			h.SSES.Logger.Error("Failed to fetch orders from database", zap.Error(err))
+			h.Logger.Error("Failed to fetch orders from database", zap.Error(err))
 			return
 		}
+
+		h.Logger.Info("orders fetched from database", zap.Any("orders", orders))
 
 		sort.Slice(orders, func(i, j int) bool {
 			return orders[i].ID < orders[j].ID
@@ -262,15 +265,92 @@ func (h *Handler) ReleaseOrderHandler() gin.HandlerFunc {
 		}
 
 		// Broadcast the order release status
-		message := map[string]interface{}{
-			"id":       order.ID,
-			"released": true,
-		}
+		//message := map[string]interface{}{
+		//	"id":       order.ID,
+		//	"released": true,
+		//}
 
-		h.SSES.BroadcastMessage(message)
+		//TODO: broadcast using websocket
+		//h.WS.BroadcastOrder() //TODO: Define broadcasting message
+		//h.SSES.BroadcastMessage(message)
 
 		// Return success response
 		c.JSON(http.StatusOK, gin.H{"message": "Order released successfully", "orderId": order.ID})
+	}
+}
+func (h *Handler) DeclineOrderHandler() gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		var input struct {
+			Reason string `json:"reason"`
+		}
+
+		orderIDStr := c.Param("orderId")
+		orderID, err := strconv.Atoi(orderIDStr)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid order ID"})
+			return
+		}
+
+		if err := c.ShouldBindJSON(&input); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+			return
+		}
+
+		var order models.Order
+		if err := h.DB.Preload("AddrToRelease").Preload("User").First(&order, orderID).Error; err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Order not found: " + err.Error()})
+			return
+		}
+
+		// Check if the order has an assigned address and free it
+		if order.ReleasedAddrID != nil {
+			var address models.Address
+			if err := h.DB.First(&address, *order.ReleasedAddrID).Error; err == nil {
+				address.Assigned = false
+				address.AssignedUserID = nil
+				address.Released = false
+
+				if err := h.DB.Save(&address).Error; err != nil {
+					c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to free the assigned address: " + err.Error()})
+					return
+				}
+			}
+		}
+
+		declinedOrder := models.DeclinedOrder{
+			OrderID:      order.ID,
+			Reason:       input.Reason,
+			DeclinedAt:   time.Now(),
+			DeclinedByID: 1, //TODO: Add logic here to get the employee ID (the user performing the decline)(Currently is set to bot)
+		}
+
+		if err := h.DB.Create(&declinedOrder).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save declined order"})
+			return
+		}
+
+		if err := h.DB.Delete(&order).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete the order"})
+			return
+		}
+
+		messageText := fmt.Sprintf(
+			"Ваш заказ #%d был удален.\n",
+			order.ID,
+		)
+
+		msg := tu.Message(
+			tu.ID(order.User.ChatID),
+			messageText,
+		)
+
+		if _, err := h.Bot.API.SendMessage(msg); err != nil {
+			h.Logger.Info("Failed to send message", zap.Error(err))
+		}
+
+		// Return success response
+		c.JSON(http.StatusOK, gin.H{"message": "Order declined successfully"})
 	}
 }
 
@@ -517,6 +597,13 @@ func (h *Handler) SendMessage(c *gin.Context, chatID int64, order models.Order) 
 	if err != nil {
 		return fmt.Errorf("failed to send image to Telegram: %v", err)
 	}
+
+	empMessage := fmt.Sprintf("Заказ: %d  завершен\n", order.ID)
+
+	_, _ = h.Bot.API.SendMessage(&telego.SendMessageParams{
+		ChatID: tu.ID(h.Api.Bot.GroupID),
+		Text:   empMessage,
+	})
 
 	//msg := tu.Message(
 	//	tu.ID(chatID),

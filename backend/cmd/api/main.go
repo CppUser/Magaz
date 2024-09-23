@@ -144,6 +144,7 @@ func migrateDatabase(db *gorm.DB) error {
 		&models.CityProduct{},
 		&models.Address{},
 		&models.Order{},
+		&models.DeclinedOrder{},
 		&models.Card{},
 		&models.Crypto{},
 	)

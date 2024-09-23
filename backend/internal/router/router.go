@@ -37,9 +37,12 @@ func SetupRouter(h *handler.Handler) *gin.Engine {
 			admin.GET("/chat", h.AdminDisputesHandler())
 			admin.GET("/settings", h.AdminSettingsHandler())
 			admin.GET("/products/getProducts", h.GetProductsAdminHandler())
+			admin.GET("/products/getAddProductForm", h.GetAddProductFormHandler())
 			admin.POST("/products/add-product", h.PostAdminAddProduct())
-			admin.POST("/products/addProdAddr", h.PostAdminAddProductAddr()) //TODO:Rename o address
-			admin.GET("/products/getProdAddr", h.AdminGetProductAddr())      //TODO:Rename o address
+			admin.POST("/products/addProdAddr", h.PostAdminAddProductAddr())
+			admin.GET("/products/getProdAddrForm", h.GetProductAddrForm())
+			admin.GET("/products/getAddAddressForm", h.GetAddAddrForm())
+			admin.GET("/products/getProdAddr", h.AdminGetProductAddr())
 		}
 
 		empl := api.Group("/empl")
@@ -60,6 +63,7 @@ func SetupRouter(h *handler.Handler) *gin.Engine {
 			empl.GET("/orders/address", h.GetOrderAddressHandler())
 			empl.POST("/orders/address/assign", h.PostOrderAddressHandler())
 			empl.POST("/orders/release/:orderId", h.ReleaseOrderHandler())
+			empl.POST("/orders/decline/:orderId", h.DeclineOrderHandler())
 
 		}
 

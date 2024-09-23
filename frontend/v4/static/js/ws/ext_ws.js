@@ -90,6 +90,26 @@
                 break;
             case "new_order":
                 console.log("Received: new order");
+
+                const notifCountElement = document.querySelector('.notif .count');
+
+                // Check if the element exists
+                if (!notifCountElement) {
+                    console.error('Notification count element not found.');
+                    return;
+                }
+
+                // Get the current count from the element's text
+                let currentCount = parseInt(notifCountElement.textContent) || 0;
+                console.log('Current count is:', currentCount);
+
+                // Increment the count
+                const newCount = currentCount + 1;
+
+                // Update the notification count element with the new count
+                notifCountElement.textContent = newCount;
+
+                console.log('Updated count is:', newCount);
                 break;
             case "assign_address":
                 console.log("Received: updated assigned address");
@@ -117,6 +137,26 @@
     window.isWebSocketOpen = function () {
         return htcon.readyState === htcon.OPEN;
     }
+
+    function updateNotificationCount() {
+        const notifCountElement = document.querySelector('.notif .count');
+
+        if (!notifCountElement) {
+            console.error('Notification count element not found');
+            return;
+        }
+
+        // Get the current count, parse it to an integer, and increment by 1
+        let currentCount = parseInt(notifCountElement.textContent) || 0;
+        notifCountElement.textContent = currentCount + 1;
+
+        console.log('Updated notification count:', currentCount + 1); // Debug log
+    }
+
+    document.querySelector('.notif').addEventListener('click', function() {
+        const notifCountElement = document.querySelector('.notif .count');
+        notifCountElement.textContent = '0'; // Reset the count to 0
+    });
 
 })()
 

@@ -10,7 +10,7 @@ type Address struct {
 	Description    string    `gorm:"size:255"` // Details about the storage location or conditions.
 	Image          string    `gorm:"size:255"` // Image of the location, product storage, etc.
 	AddedAt        time.Time `gorm:"default:CURRENT_TIMESTAMP"`
-	EmployeeID     uint      `gorm:"not null"` // The employee who added this record.
+	EmployeeID     uint      `gorm:""` // The employee who added this record.
 	AddedBy        Employee  `gorm:"foreignKey:EmployeeID;constraint:OnDelete:CASCADE;"`
 	Assigned       bool      `gorm:"default:false"`
 	AssignedUserID *int64    `gorm:""`

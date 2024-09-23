@@ -19,6 +19,12 @@ func GetAvailableAddresses(db *gorm.DB, cityID, productID uint, quantity float32
 		return nil, err
 	}
 
+	//TODO: refactor use template
+	//addresses, err := crud.GetAllWithAssociations[models.Address](
+	//	db.Where("city_id = ? AND product_id = ? AND qtn_price_id = ? AND released = ? AND assigned = ?", cityID, productID, qtnPrice.ID, false, false),
+	//	"City", "Product", "QtnPrice", // Associations to preload
+	//)
+
 	// Once the QtnPrice is found, fetch the available addresses
 	var addresses []models.Address
 	result := db.Where("city_id = ? AND product_id = ? AND qtn_price_id = ? AND released = ? AND assigned = ?", cityID, productID, qtnPrice.ID, false, false).

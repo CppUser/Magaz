@@ -2,7 +2,7 @@
 {{define "title"}}Employee Page{{end}}
 
 {{define "styles"}}
-    <link rel="preload" href="/frontend/v1/static/css/bootstrap/bootstrap.min.css" as="style">
+{{/*    <link rel="preload" href="/frontend/v1/static/css/bootstrap/bootstrap.min.css" as="style">*/}}
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <link rel="stylesheet" href="/frontend/v4/static/css/empl/style.css">
 {{end}}
@@ -42,7 +42,7 @@
             <label for="theme-toggle" class="theme-toggle"></label>
             <a href="#" class="notif">
                 <i class='bx bx-bell'></i>
-                <span class="count">12</span>
+                <span class="count">0</span>
             </a>
         </nav>
         <!-- End of Navbar -->
@@ -127,7 +127,7 @@
                         </thead>
                         <tbody id="orders-tbody">
                         {{range .Orders}}
-                            <tr onclick="toggleRowDetails({{.}},this)">
+                            <tr data-order-id="${{.ID}}" onclick="toggleRowDetails({{.}},this)">
                                 <td>{{.ID}}</td>
                                 <td>{{.CityName}}</td>
                                 <td>{{.ProductName}}</td>
@@ -197,7 +197,7 @@
 {{define "footer"}}{{end}}
 {{define "js"}}
     <script src="/frontend/v4/static/js/empl/index.js"></script>
-    <script defer src="/frontend/v1/static/js/bootstrap/bootstrap.bundle.min.js"></script>
+{{/*    <script defer src="/frontend/v1/static/js/bootstrap/bootstrap.bundle.min.js"></script>*/}}
 {{end}}
 
 {{template "base" .}}

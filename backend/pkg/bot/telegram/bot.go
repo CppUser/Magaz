@@ -1,3 +1,49 @@
+//TODO: Current setup allows for bot to join group without permission. that can cause a problem with flood and load of large groups to
+//infintrate  bot
+//Try to imlement something like this in backend or here in ReceiveUpdate
+/*
+
+ // Define allowed group chat IDs
+    allowedGroups := map[int64]bool{
+        -1001234567890: true, // Replace with your actual allowed group chat IDs
+        -1009876543210: true, // Add more allowed groups if needed
+    }
+
+    // Fetch updates (messages) from the bot
+    updates, err := bot.GetUpdates(nil)
+    if err != nil {
+        log.Fatalf("Failed to get updates: %s", err)
+    }
+
+    for _, update := range updates {
+        // Check if it's a message and comes from a group chat
+        if update.Message != nil && update.Message.Chat.Type == "supergroup" {
+            chatID := update.Message.Chat.ID
+
+            // Check if the chat is in the allowed groups list
+            if _, ok := allowedGroups[chatID]; !ok {
+                // If not allowed, ignore the message
+                log.Printf("Ignoring message from unauthorized group chat ID: %d", chatID)
+                continue
+            }
+
+            // If allowed, process the message
+            log.Printf("Message from allowed group: %d, content: %s", chatID, update.Message.Text)
+
+            // Example: reply to the message
+            _, err = bot.SendMessage(&telego.SendMessageParams{
+                ChatID: telego.ChatID{ID: chatID},
+                Text:   "Message received from authorized group!",
+            })
+            if err != nil {
+                log.Printf("Failed to send message: %s", err)
+            }
+        }
+    }
+
+
+*/
+
 package telegram
 
 import (
@@ -10,6 +56,7 @@ import (
 	"Magaz/backend/pkg/bot/telegram/handlers"
 	"Magaz/backend/pkg/utils/state/fsm"
 	"fmt"
+	tu "github.com/mymmrac/telego/telegoutil"
 	"strconv"
 	"strings"
 	"time"
@@ -86,9 +133,10 @@ func (b *Bot) InitBot() {
 			Event:      "/start",
 			Conditions: []fsm.ConditionFunc{},
 			Actions: []fsm.ActionFunc{
-				handlers.SendMessageWithMarkup(bot, "Добрый день", map[string]string{
-					"Вакансии": "hire",
-				}),
+				//TODO: add it when admin has option to post it in settings
+				//handlers.SendMessageWithMarkup(bot, "Добрый день", map[string]string{
+				//	"Вакансии": "hire",
+				//}),
 
 				//check if user exist in cache
 
@@ -174,7 +222,6 @@ func (b *Bot) InitBot() {
 				},
 			},
 		},
-		//TODO: after choosing quantity, offer region where delivery is available
 		//TODO: add next rule to add to cart to shop for more items
 		{
 			Event:      "quantity",
@@ -187,11 +234,24 @@ func (b *Bot) InitBot() {
 					user := context["from"].(telego.User)
 					StoreUserChoice(b.Cache, user.ID, "quantity", qtAmount)
 
-					//TODO: Generate payment method markup
+					choices, err := GetUserChoices(b.Cache, user.ID)
+					if err != nil {
+						return err
+					}
+					city, _ := crud.GetCityIDByName(b.DB, choices["city"])
+					prID, _ := crud.GetProductIDByCityAndProductName(b.DB, choices["city"], choices["product"])
+					qt, _ := strconv.ParseFloat(choices["quantity"], 32)
+
+					// Use the GetAvailableAddresses function to check if there are any available addresses
+					availableAddresses, err := crud.GetAvailableAddresses(b.DB, city, prID, float32(qt))
+					if err != nil || len(availableAddresses) == 0 {
+						// If no addresses available, notify the user
+						return handlers.EditMessage(bot, "К сожалению, нет доступных адресов для выбранного количества. Пожалуйста, начните сначала с команды /start.")(context)
+					}
 
 					return handlers.EditMessageWithMarkup(bot, "Пожалуйста выберите метод оплаты:", []handlers.TempMarkup{ //TODO: replace with generated markup
 						{Text: "Перевод на карту", CallbackData: "card"},
-						{Text: "Оплата Крипто валютой", CallbackData: "crypto"},
+						//{Text: "Оплата Крипто валютой", CallbackData: "crypto"},
 					})(context)
 				},
 			},
@@ -287,6 +347,7 @@ func (b *Bot) InitBot() {
 					user := context["from"].(telego.User)
 					message := context["message"].(*telego.Message)
 
+					//TODO: check if order is in process to avoid flooding
 					choices, err := GetUserChoices(b.Cache, user.ID)
 					if err != nil {
 						return err
@@ -294,6 +355,39 @@ func (b *Bot) InitBot() {
 					city, _ := crud.GetCityIDByName(b.DB, choices["city"])
 					prID, _ := crud.GetProductIDByCityAndProductName(b.DB, choices["city"], choices["product"])
 					qt, _ := strconv.ParseFloat(choices["quantity"], 32)
+
+					// Check if the user already has 2 or more active (non-released) orders
+					var activeOrders []models.Order
+					if err := b.DB.Where("user_id = ? AND released = ?", user.ID, false).Find(&activeOrders).Error; err != nil {
+						return fmt.Errorf("failed to fetch active orders: %w", err)
+					}
+
+					// If the user already has 2 active (non-released) orders, prevent them from creating more
+					if len(activeOrders) >= 2 {
+						//TODO: send to operator chat instead right now since there is no option , using old method
+						msg := "У вас уже есть 2 активных заказа. Пожалуйста, завершите один из них, прежде чем создавать новый.\n\n" +
+							"Если у вас возникли проблемы с заказом свяжитесь с оператором старым методом"
+
+						// Add the details of the active orders to the message
+						msg += "Ваши активные заказы:\n"
+						for _, order := range activeOrders {
+							// Since city and product are not preloaded, use the choices retrieved earlier
+							msg += fmt.Sprintf(
+								"Заказ #%d\n"+
+									"Город: %s\n"+
+									"Товар: %s\n"+
+									"Количество: %.2f\n"+
+									"Сумма к оплате: %d\n\n",
+								order.ID,
+								choices["city"],
+								choices["product"],
+								order.Quantity,
+								order.Due,
+							)
+						}
+
+						return handlers.EditMessage(bot, msg)(context)
+					}
 
 					var qtnPrice models.QtnPrice //TODO: Refactor
 					// Find the price for the given quantity
@@ -324,6 +418,15 @@ func (b *Bot) InitBot() {
 							ReleasedAddrID:    &address.ID,
 						}
 
+						var addr models.Address
+						if err := b.DB.First(&addr, &address.ID).Error; err == nil {
+							if !addr.Assigned {
+								addr.Assigned = true
+								addr.AssignedUserID = &user.ID
+								//TODO add AssignedBy (Bot)
+							}
+						}
+
 						if err := b.DB.Create(&order).Error; err != nil {
 							b.Logger.Error("Failed to create new order in DB", zap.String("error", err.Error()))
 						}
@@ -352,6 +455,7 @@ func (b *Bot) InitBot() {
 									LastName:   pmt.(models.Card).LastName,
 									UserName:   pmt.(models.Card).UserID,
 									Password:   pmt.(models.Card).Password,
+									QuickPay:   pmt.(models.Card).QuickPay,
 								},
 							},
 							Address: *address,
@@ -369,6 +473,7 @@ func (b *Bot) InitBot() {
 								"Банк: %s\n"+
 								"Номер карты: %s\n"+
 								"ФИО: %s\n"+
+								"СБП: %s\n"+
 								"*************************\n",
 							order.ID,
 							choices["city"],
@@ -379,18 +484,26 @@ func (b *Bot) InitBot() {
 							pmt.(models.Card).BankName,
 							pmt.(models.Card).CardNumber,
 							pmt.(models.Card).LastName+" "+pmt.(models.Card).FirstName,
+							pmt.(models.Card).QuickPay,
 						)
 					} else if choices["payment"] == "crypto" {
 						//TODO: Implement
 					}
 
-					//TODO: need to pass orverview instead of order model or add in order model support for json
 					b.WS.BroadcastOrder(ordView)
+					//TODO: Send message to Employee telegram about new order (to personal or to group chat)"4512552536"
+
+					empMessage := fmt.Sprintf("Добавлен новый заказ: %d\n", ordView.ID)
+
+					_, _ = bot.SendMessage(&telego.SendMessageParams{
+						ChatID: tu.ID(b.Config.GroupID),
+						Text:   empMessage,
+					})
 
 					go func(orderID uint, addrID *uint) {
 						//TODO: Does not work when there is constant ordering , need to find other way to put timer on order
 						//Maybe some database watching system
-						<-time.After(1 * time.Minute)
+						<-time.After(15 * time.Minute)
 
 						order.ReleasedAddrID = nil
 						if err := b.DB.Save(&order).Error; err != nil {
@@ -432,7 +545,8 @@ func (b *Bot) InitBot() {
 
 					message := fmt.Sprintf(
 						"Пожалуйста ожидайте ответа оператора\n" +
-							"Для более быстрой обработки вашего заказа вы можете прикрепите фотографию с оплатой")
+							"Функция подтвержденя оплаты в данный момент не работает\n" +
+							"Если у вас имеется чек на руках отправьте его старым методом\n также укажите номер заказа")
 
 					return handlers.EditMessage(bot, message)(context)
 				},

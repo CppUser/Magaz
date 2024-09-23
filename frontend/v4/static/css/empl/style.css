@@ -707,3 +707,38 @@ body{
 .content main .side-window .modal-overlay .table th, .modal-overlay #assign-btn {
     margin-top: 20px; /* Adds space between the table and the button */
 }
+
+
+/****************************************************************************/
+/****                    Fix Remove later                                ****/
+/****************************************************************************/
+
+
+.release-modal, .decline-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8); /* Dark background to highlight the popup */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1500; /* Ensures it's on top of everything */
+}
+
+.popup-content {
+    background-color: #fff;
+    padding: 30px;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.popup-content h3 {
+    margin-bottom: 20px;
+}
+
+.popup-content button {
+    margin: 10px;
+}

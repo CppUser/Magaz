@@ -4,18 +4,18 @@ import "time"
 
 type Card struct {
 	ID         uint   `gorm:"primaryKey"`
-	BankName   string `gorm:"size:100;not null"`
-	BankURL    string `gorm:"size:100;not null"`
-	UserID     string `gorm:"size:100;not null"`
-	Password   string `gorm:"size:100;not null"`
-	CardNumber string `gorm:"size:100;not null"`
-	QuickPay   string `gorm:"size:100;not null"`
+	BankName   string `gorm:"size:100"`
+	BankURL    string `gorm:"size:100"`
+	UserID     string `gorm:"size:100"`
+	Password   string `gorm:"size:100"`
+	CardNumber string `gorm:"size:100"`
+	QuickPay   string `gorm:"size:100"`
 	FirstName  string `gorm:"size:100"`
 	LastName   string `gorm:"size:100"`
-	ExpireDate string `gorm:"size:100;not null"`
-	CVV        string `gorm:"size:100;not null"`
-	CardType   string `gorm:"size:100;not null"`
-	Balance    int    `gorm:"size:100;not null"`
+	ExpireDate string `gorm:"size:100"`
+	CVV        string `gorm:"size:100"`
+	CardType   string `gorm:"size:100"`
+	Balance    int    `gorm:"size:100"`
 	UsedTimes  uint   `gorm:"default:0"`
 	Active     bool   `gorm:"default:true"`
 	CreatedAt  time.Time

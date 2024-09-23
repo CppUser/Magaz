@@ -62,6 +62,7 @@ type TGBotConfig struct {
 	Token       string `mapstructure:"token"`
 	WebhookLink string `mapstructure:"webhook_link"`
 	WebhookPath string `mapstructure:"webhook_path"`
+	GroupID     int64  `mapstructure:"group_id"`
 }
 
 // TODO: make more generic to load any config , from any package call (i.e. bot telegram uses same logic to load config)

@@ -1,7 +1,9 @@
 package repository
 
 import (
+	crud "Magaz/backend/internal/storage"
 	"Magaz/backend/internal/storage/models"
+	"fmt"
 	"gorm.io/gorm"
 	"time"
 )
@@ -64,18 +66,41 @@ func GetUnreleasedOrders(db *gorm.DB) ([]OrderView, error) {
 		}
 
 		// Populate PaymentMethod based on the type (same logic as before)
-		if order.PaymentMethodType == "Card" {
+		if order.PaymentMethodType == "card" {
+
+			card, err := crud.Get[models.Card](db, order.PaymentMethodID)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get card payment method: %w", err)
+			}
+
 			orderView.PaymentMethod = PaymentView{
-				PaymentCategory: "Card",
-				CardPayment:     CardView{
-					// Populate card details here
+				PaymentCategory: "Карта & СБП",
+				CardPayment: CardView{
+					BankName:   card.BankName,
+					BankUrl:    card.BankURL,
+					CardNumber: card.CardNumber,
+					FirstName:  card.FirstName,
+					LastName:   card.LastName,
+					UserName:   card.UserID,
+					Password:   card.Password,
+					QuickPay:   card.QuickPay,
 				},
 			}
-		} else if order.PaymentMethodType == "Crypto" {
+		} else if order.PaymentMethodType == "crypto" {
+
+			cr, err := crud.Get[models.Crypto](db, order.PaymentMethodID)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get card payment method: %w", err)
+			}
+
 			orderView.PaymentMethod = PaymentView{
 				PaymentCategory: "Crypto",
-				CryptoPayment:   CryptoView{
-					// Populate crypto details here
+				CryptoPayment: CryptoView{
+					WalletName:    cr.WalletName,
+					WalletAddress: cr.WalletAddr,
+					WalletURL:     "TODO:Add to crypto model",
+					UserName:      cr.UserID,
+					Password:      cr.Password,
 				},
 			}
 		}

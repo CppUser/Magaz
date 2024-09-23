@@ -8,6 +8,7 @@ type CardView struct {
 	LastName   string `json:"last_name"`
 	UserName   string `json:"user_name"`
 	Password   string `json:"password"`
+	QuickPay   string `json:"quick_pay"`
 }
 
 type CryptoView struct {
