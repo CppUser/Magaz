@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="/static/css/empl/root.css">
+    <link rel="stylesheet" href="/static/css/empl/nav.css">
+    <link rel="stylesheet" href="/static/css/empl/content.css">
+    
+
+    <title>Document</title>
+
+</head>
+<body>
+    <!--Sidebar-->
+    <div class="sidebar">
+        <a href="#" class="logo">
+            <i class='bx bx-menu'></i>
+            <div class="logo-name"></div>
+        </a>
+        <ul class="side-menu">
+            <li><a href="#"><i class='bx bxs-dashboard'></i>Статистика</a></li>
+            <li class="active"><a href="#"><i class='bx bx-analyse'></i>Заказы</a></li>
+            <li><a href="#"><i class='bx bx-message-square-dots'></i>Диспуты</a></li>
+            <li><a href="#"><i class='bx bx-group'></i>Чат</a></li>
+            <li><a href="#"><i class='bx bx-cog'></i>Настройки</a></li>
+        </ul>
+        <ul class="side-menu">
+            <li>
+                <a href="#" class="logout">
+                    <i class='bx bx-log-out-circle'></i>
+                    Выйти
+                </a>
+            </li>
+        </ul>
+    </div>
+<!--End Sidebar-->
+
+<!--Content Section-->
+<div class="content">
+    <!--Navbar Section-->
+ <nav>
+    <input type="checkbox" id="theme-toggle" hidden>
+    <label for="theme-toggle" class="theme-toggle"></label>
+    <a href="#" class="notif">
+        <i class='bx bx-bell'></i>
+        <span class="count">12</span>
+    </a>  
+ </nav>
+ <!--End navbar -->
+
+ <!-- Main Content section -->
+ <main>
+    <div class="header">
+        <div class="left">
+            <h1>Dashboard</h1>
+        </div>
+    </div>
+<!-- Insights -->
+<ul class="insights">
+    <li>
+        <i class='bx bx-cart-download'></i>
+        <span class="info">
+            <h3>
+                1,074
+            </h3>
+            <p>Новые Заказы</p>
+        </span>
+    </li>
+    <li><i class='bx bx-time-five'></i>
+        <span class="info">
+            <h3>
+                3,944
+            </h3>
+            <p>В ожидании</p>
+        </span>
+    </li>
+    <li><i class='bx bx-x-circle'></i>
+        <span class="info">
+            <h3>
+                14,721
+            </h3>
+            <p>Отмененные</p>
+        </span>
+    </li>
+    <li><i class='bx bx-check'></i>
+        <span class="info">
+            <h3>
+                6,742
+            </h3>
+            <p>Завершенные</p>
+        </span>
+    </li>
+</ul>
+<!-- End of Insights -->
+
+<!-- Content data -->
+<div class="content-data">
+    <div class="orders">
+        <div class="header">
+            <div class="header">
+                <i class='bx bx-receipt'></i>
+                <h3>Новые Заказы</h3>
+                <i class='bx bx-filter'></i>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Order Date</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <p>John Doe</p>
+                        </td>
+                        <td>14-08-2023</td>
+                        <td><span class="status completed">Completed</span></td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <p>John Doe</p>
+                        </td>
+                        <td>14-08-2023</td>
+                        <td><span class="status pending">Pending</span></td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <p>John Doe</p>
+                        </td>
+                        <td>14-08-2023</td>
+                        <td><span class="status process">Processing</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+    <!--End Content data -->
+</main>
+</div>
+<!--End Content -->
+<script src="/static/js/empl/index.js"></script>
+</body>
+</html>

@@ -1,0 +1,258 @@
+
+
+/* Styles for the orders table */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+th, td {
+    padding: 8px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+th {
+    background-color: #f2f2f2;
+}
+
+tr:hover {
+    background-color: #f5f5f5;
+}
+
+tr.highlight {
+    background-color: #d3d3d3 !important;
+}
+
+.side-window {
+    position: fixed;
+    right: 0;
+    top: 0;
+    width: 400px;
+    height: 100%;
+    background-color: #f9f9f9;
+    -webkit-box-shadow: -2px 0 10px rgba(0, 0, 0, 0.2); /* For Safari, Chrome */
+    -moz-box-shadow: -2px 0 10px rgba(0, 0, 0, 0.2); /* For Firefox */
+    box-shadow: -2px 0 10px rgba(0, 0, 0, 0.2);
+    z-index: 1100;
+    padding: 60px 20px 20px;
+    display: none; /* Initially hidden */
+    overflow-y: auto;
+}
+
+.side-window p {
+    font-size: 16px;
+    margin: 10px 0;
+    padding: 10px;
+    background-color: #f0f0f0;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
+
+
+.side-window p:hover {
+    background-color: #e0e0e0; /* Lighten the background color on hover */
+}
+
+
+.side-window.open {
+    display: block; /* Show when the side window is open */
+}
+
+.close-btn {
+    position: absolute;
+    top: 10px;
+    left: 15px;
+    background-color: #dc3545 !important; /* Ensure red background */
+    color: white !important; /* Ensure white icon */
+    font-size: 20px;
+    font-weight: bold;
+    border: none;
+    border-radius: 5px; /* Slightly rounded corners for square-ish look */
+    padding: 8px 12px;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 40px;
+    height: 40px;
+}
+
+.close-btn:hover {
+    background-color: #c82333 !important; /* Darker red on hover */
+    color: white !important;
+}
+
+.close-btn i {
+    font-size: 18px !important;
+}
+
+.collapsible {
+    margin: 5px 0;
+    padding-left: 20px; /* Indent collapsible content */
+    display: none;
+    background-color: #fafafa;
+    padding: 10px;
+}
+
+/* Indicating that the section is collapsible (dropdown) */
+.collapsible-toggle {
+    cursor: pointer;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #e0e0e0;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 5px;
+    transition: background-color 0.3s ease;
+}
+
+.collapsible-toggle::after {
+    content: "\25B6"; /* Right arrow */
+    font-size: 16px;
+    margin-left: 10px;
+    transition: transform 0.3s ease;
+}
+
+/* When the section is open, rotate the arrow */
+.collapsible-toggle.open::after {
+    transform: rotate(90deg); /* Rotated arrow */
+}
+
+
+/* Icons for dropdowns */
+p[data-section="client"], p[data-section="payment"], p[data-section="address"] {
+    cursor: pointer;
+}
+
+/* Highlight when collapsible rows are hovered */
+.collapsible p {
+    padding: 8px;
+    background-color: #f9f9f9;
+    border-left: 3px solid #007bff; /* Blue border to indicate the section */
+}
+
+h3 {
+    cursor: pointer;
+    color: #007bff;
+    margin-top: 10px;
+}
+
+h3:hover {
+    text-decoration: underline;
+}
+
+
+.decline-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #fff;
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    z-index: 1200;
+}
+
+.decline-popup h3 {
+    margin-top: 0;
+}
+
+.decline-popup select {
+    width: 100%;
+    margin: 10px 0;
+    padding: 8px;
+}
+
+.decline-popup button {
+    margin-top: 10px;
+    margin-right: 10px;
+}
+
+.release-popup, .decline-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #fff;
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    z-index: 1200;
+}
+
+.release-popup h3, .decline-popup h3 {
+    margin-top: 0;
+}
+
+.release-popup button, .decline-popup button {
+    margin-top: 10px;
+    margin-right: 10px;
+}
+
+.release-popup select, .decline-popup select {
+    width: 100%;
+    margin: 10px 0;
+    padding: 8px;
+}
+
+.modal-overlay {
+    position: fixed;
+    width: 50%;
+    height: 50%;
+    display: none;
+    justify-content: center; /* Center horizontally */
+    align-items: center; /* Center vertically */
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #fff;
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    z-index: 1200;
+}
+
+/* Modal content styling */
+.modal-content {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    z-index: 1001; /* Above the overlay */
+    max-width: 500px; /* Or whatever width you prefer */
+    width: 90%; /* Responsive width */
+    align-items: center;
+    justify-content: space-between;
+    display: flex;
+}
+
+.modal-body {
+    width: 100%;
+    overflow-y: auto; /* Allows vertical scrolling */
+    max-height: 300px; /* Adjust based on your needs */
+}
+.modal-overlay .table th, .modal-overlay .table td {
+    border-bottom: 2px solid #ccc; /* Stronger line for modal tables */
+}
+.address-table {
+    width: 100%; /* Ensures the table uses the full width of its container */
+    margin-bottom: 0; /* Removes bottom margin to tightly pack items */
+}
+
+#assign-btn {
+    margin-top: 20px; /* Adds space between the table and the button */
+}
+/*.side-window .close-btn:hover {*/
+/*    background-color: darkred !important; !* Darker red on hover *!*/
+/*    color: white !important; !* Ensure text stays white *!*/
+/*}*/
+
+/*.close-btn {*/
+/*    cursor: pointer;*/
+/*    font-size: 20px;*/
+/*}*/

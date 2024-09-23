@@ -149,3 +149,69 @@ func migrateDatabase(db *gorm.DB) error {
 		&models.Crypto{},
 	)
 }
+
+func populateTestData(db *gorm.DB) {
+	// Define some test card data
+	cards := []models.Card{
+		{
+			BankName:   "Chase Bank",
+			BankURL:    "https://www.chase.com",
+			UserID:     "john_doe",
+			Password:   "password123",
+			CardNumber: "4111111111111111",
+			QuickPay:   "enabled",
+			FirstName:  "John",
+			LastName:   "Doe",
+			ExpireDate: "12/25",
+			CVV:        "123",
+			CardType:   "Visa",
+			Balance:    10000, // $100.00 balance
+			Active:     true,
+			CreatedAt:  time.Now(),
+			UpdatedAt:  time.Now(),
+		},
+		{
+			BankName:   "Bank of America",
+			BankURL:    "https://www.bankofamerica.com",
+			UserID:     "jane_doe",
+			Password:   "password456",
+			CardNumber: "4222222222222",
+			QuickPay:   "enabled",
+			FirstName:  "Jane",
+			LastName:   "Doe",
+			ExpireDate: "11/24",
+			CVV:        "456",
+			CardType:   "MasterCard",
+			Balance:    15000, // $150.00 balance
+			Active:     true,
+			CreatedAt:  time.Now(),
+			UpdatedAt:  time.Now(),
+		},
+		{
+			BankName:   "Wells Fargo",
+			BankURL:    "https://www.wellsfargo.com",
+			UserID:     "bob_smith",
+			Password:   "password789",
+			CardNumber: "4333333333333",
+			QuickPay:   "disabled",
+			FirstName:  "Bob",
+			LastName:   "Smith",
+			ExpireDate: "10/23",
+			CVV:        "789",
+			CardType:   "Discover",
+			Balance:    5000, // $50.00 balance
+			Active:     true,
+			CreatedAt:  time.Now(),
+			UpdatedAt:  time.Now(),
+		},
+	}
+
+	// Insert the test cards into the database
+	for _, card := range cards {
+		if err := db.Create(&card).Error; err != nil {
+			log.Printf("Failed to insert card: %v", err)
+		} else {
+			log.Printf("Inserted card: %s %s", card.FirstName, card.LastName)
+		}
+	}
+}
