@@ -4,3 +4,4 @@ TODO: Try to handle order processing by using Concurrency  Pipline pattern
 TODO: Project has crud and repository  doing pritty much same thing fix it use repository to retrieve data or just make crud to be used everywhere
 TODO: Need to remove View models and use reg models just add `json: ....` tag to them
 TODO: Figure out sorting orders , once new details added to order it goes to the bottom it does not stay in same possition
+TODO: Define entity component system mostly for front end (e.g. if i want to edit product entity i can just pass entity i want to edit)

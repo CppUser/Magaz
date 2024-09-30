@@ -2,7 +2,10 @@ package handler
 
 import (
 	"Magaz/backend/internal/repository"
+	crud "Magaz/backend/internal/storage"
+	crud2 "Magaz/backend/internal/storage/crud"
 	"Magaz/backend/internal/storage/models"
+	"fmt"
 	"github.com/google/uuid"
 	"io"
 	"net/http"
@@ -19,7 +22,12 @@ import (
 func (h *Handler) AdminHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		tmpl := h.TmplCache["admin.page.gohtml"]
+		tmpl, err := h.TmplCache.GetTemplate("admin.page.gohtml")
+		if err != nil {
+			h.Logger.Error("Failed to get template 'admin.page.gohtml'", zap.Error(err))
+			c.String(http.StatusInternalServerError, "Failed to load template")
+			return
+		}
 
 		if tmpl != nil {
 			err := tmpl.ExecuteTemplate(c.Writer, "base", nil)
@@ -38,7 +46,7 @@ func (h *Handler) AdminHandler() gin.HandlerFunc {
 func (h *Handler) AdminStatisticsHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		tmpl := h.TmplCache["admin.page.gohtml"]
+		tmpl, _ := h.TmplCache.GetTemplate("admin.page.gohtml")
 
 		if tmpl != nil {
 			err := tmpl.ExecuteTemplate(c.Writer, "base", nil)
@@ -54,11 +62,11 @@ func (h *Handler) AdminStatisticsHandler() gin.HandlerFunc {
 	}
 }
 
-// // GetProductsAdminHandler handles the incoming requests from the admin
+// GetProductsAdminHandler handles the incoming requests from the admin
 func (h *Handler) GetProductsAdminHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		tmpl := h.TmplCache["admin.page.gohtml"]
+		tmpl, _ := h.TmplCache.GetTemplate("admin.page.gohtml")
 
 		citiesWithProducts, err := repository.FetchCityProcdducts(h.DB)
 		if err != nil {
@@ -86,10 +94,149 @@ func (h *Handler) GetProductsAdminHandler() gin.HandlerFunc {
 	}
 }
 
+func (h *Handler) EditProductQtnPrcHandler() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// Load the main template and the component template
+		tmpl, err := h.TmplCache.GetTemplate("admin.page.gohtml", "product.comp.gohtml")
+		if err != nil {
+			h.Logger.Error("Failed to load templates", zap.Error(err))
+			c.String(http.StatusInternalServerError, "Failed to load templates")
+			return
+		}
+
+		// Fetch the relevant data here, e.g., quantity and price for this product
+		cityID := c.Query("cityID")
+		productID := c.Query("productID")
+		quantityIDStr := c.Query("quantityID")
+		quantityID, err := strconv.ParseUint(quantityIDStr, 10, 32)
+		if err != nil {
+			c.String(http.StatusBadRequest, "Invalid quantityID")
+			return
+		}
+
+		qtnPrice, err := crud.Get[models.QtnPrice](h.DB, uint(quantityID))
+		if err != nil {
+			c.String(http.StatusInternalServerError, fmt.Sprintf("Failed to get QtnPrice: %v", err))
+			return
+		}
+
+		quantity := qtnPrice.Quantity
+		price := qtnPrice.Price
+
+		data := gin.H{
+			"CityID":     cityID,
+			"ProductID":  productID,
+			"QuantityID": quantityID,
+			"Quantity":   quantity,
+			"Price":      price,
+		}
+
+		// Render the block "edit_product_qtn_price" from the component
+		err = tmpl.ExecuteTemplate(c.Writer, "edit_product_qtn_price", data)
+		if err != nil {
+			h.Logger.Error("Error executing template", zap.Error(err))
+			c.String(http.StatusInternalServerError, "Error executing template: %v", err)
+			return
+		}
+
+	}
+}
+func (h *Handler) UpdateProductQtnPrcHandler() gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		quantityIDStr := c.PostForm("quantityID")
+		cityIDStr := c.PostForm("cityID")
+		productIDStr := c.PostForm("productID")
+		quantityStr := c.PostForm("quantity")
+		priceStr := c.PostForm("price")
+
+		// Convert string values to appropriate types
+		quantityID, err := strconv.ParseUint(quantityIDStr, 10, 32)
+		if err != nil {
+			h.Logger.Error("Invalid quantityID", zap.Error(err))
+			c.String(http.StatusBadRequest, "Invalid quantityID")
+			return
+		}
+		quantity, err := strconv.ParseFloat(quantityStr, 32)
+		if err != nil {
+			h.Logger.Error("Invalid quantity", zap.Error(err))
+			c.String(http.StatusBadRequest, "Invalid quantity")
+			return
+		}
+		price, err := strconv.ParseFloat(priceStr, 32)
+		if err != nil {
+			h.Logger.Error("Invalid price", zap.Error(err))
+			c.String(http.StatusBadRequest, "Invalid price")
+			return
+		}
+
+		qtnPrice, err := crud.Get[models.QtnPrice](h.DB, uint(quantityID))
+		if err != nil {
+			c.String(http.StatusInternalServerError, fmt.Sprintf("Failed to get QtnPrice: %v", err))
+			return
+		}
+
+		qtnPrice.Quantity = float32(quantity)
+		qtnPrice.Price = float32(price)
+
+		if err := crud.Update(h.DB, qtnPrice); err != nil {
+			h.Logger.Error("Failed to update QtnPrice", zap.Error(err))
+			c.String(http.StatusInternalServerError, "Failed to update QtnPrice")
+			return
+		}
+
+		cityID, err := strconv.ParseUint(cityIDStr, 10, 32)
+		if err != nil {
+			h.Logger.Error("Invalid cityID", zap.Error(err))
+			c.String(http.StatusBadRequest, "Invalid cityID")
+			return
+		}
+
+		prdID, err := strconv.ParseUint(productIDStr, 10, 32)
+		if err != nil {
+			h.Logger.Error("Invalid productID", zap.Error(err))
+			c.String(http.StatusBadRequest, "Invalid productID")
+			return
+		}
+
+		addresses, err := crud2.GetAvailableAddresses(h.DB, uint(cityID), uint(prdID), qtnPrice.Quantity)
+		if err != nil {
+			h.Logger.Error("Error", zap.Error(err))
+			return
+		}
+		addressCnt := len(addresses)
+
+		data := gin.H{
+			"Item": gin.H{
+				"QuantityID": qtnPrice.ID,
+				"Quantity":   qtnPrice.Quantity,
+				"Price":      qtnPrice.Price,
+				"AddrCnt":    addressCnt,
+			},
+			"CityID":    cityIDStr,
+			"ProductID": productIDStr,
+		}
+
+		tmpl, _ := h.TmplCache.GetTemplate("admin.page.gohtml")
+		if tmpl != nil {
+			// Render the updated row for the specific quantityID
+			err := tmpl.ExecuteTemplate(c.Writer, "product_detail_table", data)
+			if err != nil {
+				h.Logger.Error("Error executing template", zap.Error(err))
+				c.String(http.StatusInternalServerError, "Error executing template: %v", err)
+			}
+		} else {
+			h.Logger.Error("Template not found", zap.String("template", "admin.page.gohtml"))
+			c.String(http.StatusInternalServerError, "Template not found")
+		}
+
+	}
+}
+
 func (h *Handler) GetAddProductFormHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		tmpl := h.TmplCache["admin.page.gohtml"]
+		tmpl, _ := h.TmplCache.GetTemplate("admin.page.gohtml")
 
 		//TODO: Pass data with cities and available products
 		//citiesWithProducts, err := repository.FetchCityProcdducts(h.DB)
@@ -170,7 +317,7 @@ func (h *Handler) PostAdminAddProduct() gin.HandlerFunc {
 			}
 		}
 
-		tmpl := h.TmplCache["admin.page.gohtml"]
+		tmpl, _ := h.TmplCache.GetTemplate("admin.page.gohtml")
 
 		citiesWithProducts, err := repository.FetchCityProcdducts(h.DB)
 		if err != nil {
@@ -258,7 +405,7 @@ func (h *Handler) AdminGetProductAddr() gin.HandlerFunc {
 }
 func (h *Handler) GetProductAddrForm() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		tmpl := h.TmplCache["admin.page.gohtml"]
+		tmpl, _ := h.TmplCache.GetTemplate("admin.page.gohtml")
 
 		cityIDStr := c.Query("cityID")
 		productIDStr := c.Query("productID")
@@ -328,7 +475,7 @@ func (h *Handler) GetProductAddrForm() gin.HandlerFunc {
 }
 func (h *Handler) GetAddAddrForm() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		tmpl := h.TmplCache["admin.page.gohtml"]
+		tmpl, _ := h.TmplCache.GetTemplate("admin.page.gohtml")
 
 		cityIDStr := c.Query("cityID")
 		productIDStr := c.Query("productID")
@@ -514,8 +661,7 @@ func (h *Handler) PostAdminAddProductAddr() gin.HandlerFunc {
 
 func (h *Handler) AdminOrdersHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
-
-		tmpl := h.TmplCache["admin.page.gohtml"]
+		tmpl, _ := h.TmplCache.GetTemplate("admin.page.gohtml")
 
 		if tmpl != nil {
 			err := tmpl.ExecuteTemplate(c.Writer, "base", nil)
@@ -534,7 +680,7 @@ func (h *Handler) AdminOrdersHandler() gin.HandlerFunc {
 func (h *Handler) AdminDisputesHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		tmpl := h.TmplCache["admin.page.gohtml"]
+		tmpl, _ := h.TmplCache.GetTemplate("admin.page.gohtml")
 
 		if tmpl != nil {
 			err := tmpl.ExecuteTemplate(c.Writer, "base", nil)
@@ -553,7 +699,7 @@ func (h *Handler) AdminDisputesHandler() gin.HandlerFunc {
 func (h *Handler) AdminChatHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		tmpl := h.TmplCache["admin.page.gohtml"]
+		tmpl, _ := h.TmplCache.GetTemplate("admin.page.gohtml")
 
 		if tmpl != nil {
 			err := tmpl.ExecuteTemplate(c.Writer, "base", nil)
@@ -572,7 +718,7 @@ func (h *Handler) AdminChatHandler() gin.HandlerFunc {
 func (h *Handler) AdminSettingsHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		tmpl := h.TmplCache["admin.page.gohtml"]
+		tmpl, _ := h.TmplCache.GetTemplate("admin.page.gohtml")
 
 		if tmpl != nil {
 			err := tmpl.ExecuteTemplate(c.Writer, "base", nil)

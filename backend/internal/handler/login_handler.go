@@ -13,7 +13,7 @@ func (h *Handler) GETLoginHandler() gin.HandlerFunc {
 			"Title": "Login",
 			"Error": "Invalid username or password",
 		}
-		tmpl := h.TmplCache["login.page.gohtml"]
+		tmpl, _ := h.TmplCache.GetTemplate("login.page.gohtml")
 		if tmpl != nil {
 			err := tmpl.ExecuteTemplate(c.Writer, "base", data)
 			if err != nil {
@@ -52,7 +52,7 @@ func (h *Handler) POSTLoginHandler() gin.HandlerFunc {
 			"Title": "Login",
 			"Error": "Invalid username or password",
 		}
-		tmpl := h.TmplCache["login.page.gohtml"]
+		tmpl, _ := h.TmplCache.GetTemplate("login.page.gohtml")
 		if tmpl != nil {
 			err := tmpl.ExecuteTemplate(c.Writer, "base", data)
 			if err != nil {

@@ -37,6 +37,8 @@ func SetupRouter(h *handler.Handler) *gin.Engine {
 			admin.GET("/chat", h.AdminDisputesHandler())
 			admin.GET("/settings", h.AdminSettingsHandler())
 			admin.GET("/products/getProducts", h.GetProductsAdminHandler())
+			admin.GET("/products/editProductQtnPrc", h.EditProductQtnPrcHandler())
+			admin.POST("/products/upQtnPrc", h.UpdateProductQtnPrcHandler())
 			admin.GET("/products/getAddProductForm", h.GetAddProductFormHandler())
 			admin.POST("/products/add-product", h.PostAdminAddProduct())
 			admin.POST("/products/addProdAddr", h.PostAdminAddProductAddr())

@@ -28,7 +28,7 @@ import (
 func main() {
 	gin.SetMode(gin.ReleaseMode)
 
-	cfg, err := config.LoadConfig()
+	cfg, err := config.LoadAPIConfig()
 	if err != nil {
 		log.Fatalf("Failed to load API configs: %v", err)
 	}
@@ -65,12 +65,6 @@ func main() {
 	//if err = db.AutoMigrate(&models.User{}); err != nil {
 	//	zaplog.Fatal("Failed to migrate database schema", zap.Error(err))
 	//}
-
-	tempalteCache, err := handler.CreateTemplateCache(cfg.CacheDir.Layouts, cfg.CacheDir.Pages)
-	if err != nil {
-		zaplog.Fatal("Failed to create template cache", zap.Error(err))
-	}
-	h.TmplCache = tempalteCache
 
 	sessionKey := cfg.ScrKey
 	if sessionKey == "" {

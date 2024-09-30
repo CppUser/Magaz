@@ -2,6 +2,7 @@ package handler
 
 import (
 	"Magaz/backend/internal/config"
+	"Magaz/backend/internal/handler/templates"
 	"Magaz/backend/internal/system/sse"
 	ws "Magaz/backend/internal/system/websocket"
 	"Magaz/backend/pkg/bot/telegram"
@@ -11,7 +12,6 @@ import (
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
-	"html/template"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -25,66 +25,27 @@ type Handler struct {
 	Bot       *telegram.Bot
 	Redis     *redis.Client
 	DB        *gorm.DB
-	TmplCache map[string]*template.Template
+	TmplCache *templates.TemplateCache
 	Session   *sessions.CookieStore
 	SSES      *sse.SSEHub //Server side event system
 	WS        *ws.Manager //WebSockets system
 }
 
 func NewHandler(api *config.APIConfig) *Handler {
-	return &Handler{
-		Api:       api,
-		Logger:    &zap.Logger{},
-		Redis:     &redis.Client{},
-		DB:        &gorm.DB{},
-		Bot:       &telegram.Bot{},
-		TmplCache: make(map[string]*template.Template),
-		Session:   &sessions.CookieStore{},
-		WS:        &ws.Manager{},
-	}
-}
+	handler := &Handler{
+		Api:    api,
+		Logger: &zap.Logger{},
+		Redis:  &redis.Client{},
+		DB:     &gorm.DB{},
+		Bot:    &telegram.Bot{},
 
-//func (h *Handler) NewHandler() *Handler {
-//	return &Handler{
-//		Api:    api,
-//		Logger: log,
-//		Bot:    bot,
-//		Redis:  rd,
-//		DB:     db,
-//	}
-//}
-
-func CreateTemplateCache(layoutDir string, pagesDir string) (map[string]*template.Template, error) {
-	cache := map[string]*template.Template{}
-
-	// Load all layout files
-	layouts, err := filepath.Glob(filepath.Join(layoutDir, "*layout.gohtml"))
-	if err != nil {
-		return nil, err
+		Session: &sessions.CookieStore{},
+		WS:      &ws.Manager{},
 	}
 
-	// Load all page files
-	pages, err := filepath.Glob(filepath.Join(pagesDir, "*.gohtml"))
-	if err != nil {
-		return nil, err
-	}
+	handler.TmplCache, _ = templates.NewTemplateCache(api.Tmpl.Layouts, api.Tmpl.Pages, api.Tmpl.Components)
 
-	// Parse each page with the layout
-	for _, page := range pages {
-		// Extract the template name
-		name := filepath.Base(page)
-
-		// Parse the layout files and the page file
-		tmpl, err := template.ParseFiles(append(layouts, page)...)
-		if err != nil {
-			return nil, err
-		}
-
-		// Store the parsed template in the cache
-		cache[name] = tmpl
-	}
-
-	return cache, nil
+	return handler
 }
 
 func (h *Handler) ServeImage() gin.HandlerFunc {

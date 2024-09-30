@@ -1,0 +1,314 @@
+{{block "products" .}}
+    {{range .CitiesWithProducts}}
+        {{ $cityID := .CityID }}
+        <div class="prod-city">
+            <h2>{{.City}}</h2>
+            {{range .Products}}
+                {{$productID := .ProductID}}
+                <div class="prd-dtl">
+                    <div class="prd-header">
+                        <h3>{{.Name}}</h3>
+                        <span class="ttl">Total: {{.Total}}</span>
+                    </div>
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>Количество</th>
+                            <th>Цена</th>
+                            <th>Доступно</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {{range .Items}}
+                            {{template "product_detail_table" dict "Item" . "CityID" $cityID "ProductID" $productID}}
+                        {{end}}
+                        </tbody>
+                    </table>
+                </div>
+
+
+            {{end}}
+        </div>
+    {{end}}
+{{end}}
+
+{{block "product_detail_table" .}} {{/* TODO:Should be called differently*/}}
+{{$item := .Item}}
+{{$quantityID := $item.QuantityID}}
+<tr id="row-{{$quantityID}}">
+    <td>{{$item.Quantity}}</td>
+    <td>{{$item.Price}}</td>
+    <td>{{$item.AddrCnt}}</td>
+    <td>
+        <button class="btn" hx-get="/api/admin/products/getProdAddrForm?cityID={{.CityID}}&productID={{.ProductID}}&quantityID={{$quantityID}}" hx-target="#prd" hx-swap="outerHTML">
+            Адреса
+        </button>
+
+        <button class="btn" hx-get="/api/admin/products/editProductQtnPrc?cityID={{.CityID}}&productID={{.ProductID}}&quantityID={{$quantityID}}" hx-target="#row-{{$quantityID}}" hx-swap="outerHTML">
+            Ред
+        </button>
+        <button>Удалить</button>
+    </td>
+</tr>
+{{end}}
+
+
+{{block "add_product_section" .}}
+    <div id="add_prd" class="addProductModal">
+        <!--<div class="header">
+           <div class="left">
+               <h1>Добавить продукт</h1>
+           </div>
+       </div> -->
+        <div class="add_prd_content">
+            <div class="mb-3">
+                <label for="cityInput" class="form-label">Город:</label>
+                <input type="text" class="form-control" id="cityInput" name="city" placeholder="Введите название города" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="productInput" class="form-label">Продукт:</label>
+                <input type="text" class="form-control" id="productInput" name="product" placeholder="Введите название продукта" required>
+            </div>
+
+            <div id="quantitiesContainer" class="mb-3">
+                <h6>Количество и Цену:</h6>
+                <div class="input-group mb-3 quantity-price">
+                    <input type="number" class="form-control quantity" name="quantities[]" placeholder="Quantity" required>
+                    <input type="number" class="form-control price" name="prices[]" placeholder="Price" required>
+                    <button class="btn btn-outline-secondary" onclick="removeQuantityPrice(this)">Удалить</button>
+                </div>
+            </div>
+            <button class="btn btn-secondary mb-3" onclick="addQuantityPrice()">Добавить экстра</button>
+
+
+            <script>
+                function addQuantityPrice() {
+                    const quantitiesContainer = document.getElementById("quantitiesContainer");
+                    const newQuantityPrice = document.createElement("div");
+                    newQuantityPrice.className = "input-group mb-3 quantity-price";
+                    newQuantityPrice.innerHTML = `
+        <input type="number" class="form-control quantity"  name="quantities[]" placeholder="Quantity">
+        <input type="number" class="form-control price"  name="prices[]"    placeholder="Price">
+        <button class="btn btn-outline-secondary" onclick="removeQuantityPrice(this)">Remove</button>
+    `;
+                    quantitiesContainer.appendChild(newQuantityPrice);
+                }
+
+                function removeQuantityPrice(button) {
+                    button.parentElement.remove();
+                }
+            </script>
+        </div>
+        <div class="add_prd_footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+
+            <!-- HTMX button to post data -->
+            <button type="button"
+                    class="btn btn-primary"
+                    hx-post="/api/admin/products/add-product"
+                    hx-trigger="click"
+                    hx-target="#add_prd"
+                    hx-swap="outerHTML"
+                    hx-include="#cityInput, #productInput, .quantity, .price">
+                Добавить продукт
+            </button>
+        </div>
+    </div>
+{{end}}
+
+{{block "prd_address_form" .}}
+    <div class="modal fade" id="productItemModal" aria-labelledby="productItemModalLabel" >
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="productItemModalLabel">Редактировать</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <!-- Add button -->
+                    <button type="button"
+                            class="btn btn-primary"
+                            hx-get="/api/admin/products/getAddAddressForm?cityID={{$.CityID}}&productID={{$.ProductID}}&quantityID={{$.QuantityID}}"
+                            hx-target="#productItemModal"
+                            hx-swap="outerHTML" >Добавить адресс</button>
+                </div>
+                <div class="modal-body">
+                    <!-- Section for displaying items -->
+                    <div id="displayItemsSection">
+                        <table class="table">
+                            <thead>
+                            <tr>
+                                <th>Информация</th>
+                                <th>Количество</th>
+                                <th>Дата</th>
+                                <th>Кем добавлен</th>
+                                <th>Image</th>
+                                <th>Действия</th>
+                            </tr>
+                            </thead>
+                            <tbody id="itemsTableBody">
+                            {{range .Items}}
+                                <tr>
+                                    <td>{{.Description}}</td>
+                                    <td>{{.Quantity}}</td>
+                                    <td>{{.AddedAt.Format "2006-01-02 15:04:05"}}</td> <!-- Format the date -->
+                                    <td>{{.AddedBy}}</td>
+                                    <td>
+                                        {{if .Image}}
+                                            <img src="/api/get/images/{{.Image}}" alt="Image" style="max-width: 100px;">
+                                        {{else}}
+                                            <span>Отсутствует</span>
+                                        {{end}}
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-warning">Ред</button>
+                                        <button class="btn btn-sm btn-danger">Удалить</button>
+                                    </td>
+                                </tr>
+                            {{else}} <!-- If there are no items, display a message -->
+                            <tr>
+                                <td colspan="6" class="text-center">Нету доступных адресов</td>
+                            </tr>
+                            {{end}}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Section for adding new items -->
+
+                </div>
+            </div>
+        </div>
+    </div>
+{{end}}
+
+{{block "edit_product_qtn_price" .}}
+    <tr id="row-{{.QuantityID}}">
+        <td>
+            <label for="quantity-{{.QuantityID}}"></label>
+            <input type="number" value="{{.Quantity}}" name="quantity" id="quantity-{{.QuantityID}}" />
+        </td>
+        <td>
+            <label for="price-{{.QuantityID}}"></label>
+            <input type="number" value="{{.Price}}" name="price" id="price-{{.QuantityID}}" />
+            <input type="hidden" name="cityID" value="{{.CityID}}">
+            <input type="hidden" name="productID" value="{{.ProductID}}">
+            <input type="hidden" name="quantityID" value="{{.QuantityID}}">
+            <button class="btn btn-success"
+                    hx-post="/api/admin/products/upQtnPrc"
+                    hx-include="#row-{{.QuantityID}}"
+                    hx-target="#row-{{.QuantityID}}"
+                    hx-swap="outerHTML">
+                Apply
+            </button>
+        </td>
+        <td>{{.AddrCnt}}</td>
+        <td>
+            <!-- Cancel button to revert to static view -->
+            <button class="btn" hx-get="/api/admin/products/cancelEdit?cityID={{.CityID}}&productID={{.ProductID}}&quantityID={{.QuantityID}}" hx-target="#row-{{.QuantityID}}" hx-swap="outerHTML">
+                Cancel
+            </button>
+        </td>
+    </tr>
+{{end}}
+
+
+{{/*//TODO:Refactor using script inside of template (Current hack))*/}}
+{{block "add_address_form" .}}
+    <div id="addItemSection">
+        <form id="multiItemForm" enctype="multipart/form-data">
+            <div id="addressFieldsContainer">
+                <!-- Initial address form -->
+                <div class="address-item mb-3">
+                    <label for="itemDescription" class="form-label">Описание:</label>
+                    <input type="text" class="form-control itemDescription" name="description[]" placeholder="Введите уточнения">
+
+                    <label for="itemImage" class="form-label">Фото:</label>
+                    <input type="file" class="form-control itemImage" name="image[]">
+                </div>
+            </div>
+
+            <!-- Button to add more address fields -->
+            <button type="button" class="btn btn-secondary" id="addMoreAddressesButton">Добавить еще один адрес</button>
+
+            <!-- Button to submit all addresses -->
+            <button type="button"
+                    class="btn btn-primary"
+                    hx-post="/api/admin/products/addProdAddr?cityID={{$.CityID}}&productID={{$.ProductID}}&quantityID={{$.QuantityID}}"
+                    hx-trigger="click"
+                    hx-include="#multiItemForm"
+                    hx-encoding="multipart/form-data"
+                    hx-target="#addItemSection"
+                    hx-swap="outerHTML">
+                Добавить все адреса
+            </button>
+
+            <button type="button" class="btn btn-secondary" onclick="toggleAddItemSection()">Отмена</button>
+        </form>
+    </div>
+
+    <script>
+
+        // Add new address fields
+        document.getElementById('addMoreAddressesButton').addEventListener('click', function () {
+            const container = document.getElementById('addressFieldsContainer');
+            const addressItemTemplate = document.querySelector('.address-item').cloneNode(true);
+            // Clear input fields in the cloned item
+            addressItemTemplate.querySelector('.itemDescription').value = '';
+            addressItemTemplate.querySelector('.itemImage').value = '';
+            container.appendChild(addressItemTemplate);
+        });
+
+
+        function addExtraAddress() {
+            const addressContainer = document.getElementById("addressFieldsContainer");
+            const newAddressContainer = document.createElement("div");
+            newAddressContainer.className = "address-item mb-3";
+            newAddressContainer.innerHTML = `
+                <label for="itemDescription" class="form-label">Описание:</label>
+                <input type="text" class="form-control itemDescription" name="description[]" placeholder="Введите уточнения">
+
+                <label for="itemImage" class="form-label">Фото:</label>
+                <input type="file" class="form-control itemImage" name="image[]">
+    `;
+            addressContainer.appendChild(newAddressContainer);
+        }
+
+        // // Add new address fields
+        // document.getElementById('addMoreAddressesButton').addEventListener('click', function () {
+        //     const addressItemTemplate = document.querySelector('.address-item').cloneNode(true);
+        //     addressItemTemplate.querySelector('.itemDescription').value = '';
+        //     addressItemTemplate.querySelector('.itemImage').value = '';
+        //     addressItemTemplate.querySelector('.imagePath').value = ''; // Reset the hidden image path
+        //     document.getElementById('addressFieldsContainer').appendChild(addressItemTemplate);
+        // });
+        //
+        // // Upload file using HTMX
+        // function uploadFile(input) {
+        //     const file = input.files[0];
+        //     if (file) {
+        //         const formData = new FormData();
+        //         formData.append('image', file);
+        //
+        //         fetch('/api/admin/products/uploadImage', {
+        //             method: 'POST',
+        //             body: formData
+        //         })
+        //             .then(response => response.json())
+        //             .then(data => {
+        //                 if (data.success) {
+        //                     // Store the file path in the hidden input field
+        //                     input.closest('.address-item').querySelector('.imagePath').value = data.filePath;
+        //                 } else {
+        //                     alert('Failed to upload image');
+        //                 }
+        //             })
+        //             .catch(error => {
+        //                 console.error('Error uploading file:', error);
+        //                 alert('Error uploading file');
+        //             });
+        //     }
+        // }
+    </script>
+{{end}}
+
+

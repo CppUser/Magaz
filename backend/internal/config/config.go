@@ -16,7 +16,7 @@ type APIConfig struct {
 	Redis    RedisConfig    `mapstructure:"redis"`
 	Database DatabaseConfig `mapstructure:"database"`
 	Bot      TGBotConfig    `mapstructure:"tg_bot"`
-	CacheDir TemplateCache  `mapstructure:"cache_dir"`
+	Tmpl     TemplateCache  `mapstructure:"cache_dir"`
 	ScrKey   string         `mapstructure:"scr_key"`
 }
 
@@ -51,9 +51,11 @@ type ServerConfig struct {
 	IdleTimeoutMS time.Duration `mapstructure:"idle_timeout_ms"`
 }
 
+// TODO: Refactor (rename to TemplateCacheDirs)
 type TemplateCache struct {
-	Layouts string `mapstructure:"layouts"`
-	Pages   string `mapstructure:"pages"`
+	Layouts    string `mapstructure:"layouts"`
+	Pages      string `mapstructure:"pages"`
+	Components string `mapstructure:"components"`
 }
 
 // TODO: Move to bot config logic
@@ -66,7 +68,7 @@ type TGBotConfig struct {
 }
 
 // TODO: make more generic to load any config , from any package call (i.e. bot telegram uses same logic to load config)
-func LoadConfig() (*APIConfig, error) {
+func LoadAPIConfig() (*APIConfig, error) {
 	var cfg APIConfig
 
 	configPaths := []string{

@@ -75,7 +75,12 @@ func (h *Handler) HEmployeeHandler() gin.HandlerFunc {
 		}
 
 		// Regular page request rendering orders
-		tmpl := h.TmplCache["employee.page2.gohtml"]
+		tmpl, err := h.TmplCache.GetTemplate("employee.page2.gohtml")
+		if err != nil {
+			h.Logger.Error("Failed to get template", zap.Error(err))
+			c.String(http.StatusInternalServerError, "Failed to load template")
+			return
+		}
 
 		// Fetch orders
 		orders, err := crud.GetAll[models.Order](h.DB)
@@ -142,8 +147,12 @@ func (h *Handler) EmployeeHandlerTest() gin.HandlerFunc {
 			"Orders": orders,
 		}
 
-		// This is a regular HTTP request, so render the template with initial data
-		tmpl := h.TmplCache["emp.page.gohtml"]
+		tmpl, err := h.TmplCache.GetTemplate("emp.page.gohtml")
+		if err != nil {
+			h.Logger.Error("Failed to get template", zap.Error(err))
+			c.String(http.StatusInternalServerError, "Failed to load template")
+			return
+		}
 
 		if tmpl != nil {
 			if err := tmpl.ExecuteTemplate(c.Writer, "base", data); err != nil {
@@ -160,8 +169,12 @@ func (h *Handler) EmployeeHandlerTest() gin.HandlerFunc {
 func (h *Handler) GetStatisticsHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		// This is a regular HTTP request, so render the template with initial data
-		tmpl := h.TmplCache["emp.page.gohtml"]
+		tmpl, err := h.TmplCache.GetTemplate("emp.page.gohtml")
+		if err != nil {
+			h.Logger.Error("Failed to get template", zap.Error(err))
+			c.String(http.StatusInternalServerError, "Failed to load template")
+			return
+		}
 
 		if tmpl != nil {
 			if err := tmpl.ExecuteTemplate(c.Writer, "base", nil); err != nil {
@@ -499,8 +512,12 @@ func (h *Handler) PostOrderAddressHandler() gin.HandlerFunc {
 func (h *Handler) GetDisputesHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		// This is a regular HTTP request, so render the template with initial data
-		tmpl := h.TmplCache["emp.page.gohtml"]
+		tmpl, err := h.TmplCache.GetTemplate("emp.page.gohtml")
+		if err != nil {
+			h.Logger.Error("Failed to get template", zap.Error(err))
+			c.String(http.StatusInternalServerError, "Failed to load template")
+			return
+		}
 
 		if tmpl != nil {
 			if err := tmpl.ExecuteTemplate(c.Writer, "base", nil); err != nil {
@@ -518,8 +535,12 @@ func (h *Handler) GetDisputesHandler() gin.HandlerFunc {
 func (h *Handler) GetChatHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		// This is a regular HTTP request, so render the template with initial data
-		tmpl := h.TmplCache["emp.page.gohtml"]
+		tmpl, err := h.TmplCache.GetTemplate("emp.page.gohtml")
+		if err != nil {
+			h.Logger.Error("Failed to get template", zap.Error(err))
+			c.String(http.StatusInternalServerError, "Failed to load template")
+			return
+		}
 
 		if tmpl != nil {
 			if err := tmpl.ExecuteTemplate(c.Writer, "base", nil); err != nil {
@@ -537,8 +558,12 @@ func (h *Handler) GetChatHandler() gin.HandlerFunc {
 func (h *Handler) GetSettingsHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		// This is a regular HTTP request, so render the template with initial data
-		tmpl := h.TmplCache["emp.page.gohtml"]
+		tmpl, err := h.TmplCache.GetTemplate("emp.page.gohtml")
+		if err != nil {
+			h.Logger.Error("Failed to get template", zap.Error(err))
+			c.String(http.StatusInternalServerError, "Failed to load template")
+			return
+		}
 
 		if tmpl != nil {
 			if err := tmpl.ExecuteTemplate(c.Writer, "base", nil); err != nil {
@@ -556,8 +581,12 @@ func (h *Handler) GetSettingsHandler() gin.HandlerFunc {
 func (h *Handler) GetQuitHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		// This is a regular HTTP request, so render the template with initial data
-		tmpl := h.TmplCache["emp.page.gohtml"]
+		tmpl, err := h.TmplCache.GetTemplate("emp.page.gohtml")
+		if err != nil {
+			h.Logger.Error("Failed to get template", zap.Error(err))
+			c.String(http.StatusInternalServerError, "Failed to load template")
+			return
+		}
 
 		if tmpl != nil {
 			if err := tmpl.ExecuteTemplate(c.Writer, "base", nil); err != nil {
