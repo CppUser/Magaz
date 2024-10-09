@@ -3,7 +3,7 @@ package service
 import "fmt"
 
 type Service interface {
-	Initialize(config map[string]interface{}) error
+	Initialize() error
 	Start() error
 	Stop() error
 	Status() string
@@ -11,6 +11,12 @@ type Service interface {
 
 type Manager struct {
 	services map[string]Service
+}
+
+func NewServiceManager() *Manager {
+	return &Manager{
+		services: make(map[string]Service),
+	}
 }
 
 // RegisterService Register a new service
@@ -24,7 +30,7 @@ func (sm *Manager) EnableService(name string) error {
 	if !exists {
 		return fmt.Errorf("service %s not found", name)
 	}
-	if err := service.Initialize(nil); err != nil {
+	if err := service.Initialize(); err != nil {
 		return err
 	}
 	return service.Start()

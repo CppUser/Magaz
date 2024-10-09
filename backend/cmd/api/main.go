@@ -7,10 +7,11 @@ import (
 	"Magaz/backend/internal/storage/models"
 	"Magaz/backend/internal/system/websocket"
 	"Magaz/backend/internal/utils"
-	"Magaz/backend/pkg/bot/telegram"
 	"Magaz/backend/pkg/client/postgres"
 	"Magaz/backend/pkg/client/redis"
 	"Magaz/backend/pkg/utils/logger"
+	"Magaz/backend/pkg/utils/service"
+	tg "Magaz/services/bots/telegram/v2"
 	"context"
 	"errors"
 	"github.com/gin-gonic/gin"
@@ -83,21 +84,29 @@ func main() {
 	h.WS = wscon
 
 	//TODO: passing to handler initialized clients like redis and db . Pass handler instead ?
-	bot := telegram.Bot{
-		Config:           &cfg.Bot,
-		Logger:           zaplog,
-		UpdateChanBuffer: 128, // Buffer size is 128 default
-		Cache:            rdb,
-		DB:               db,
-		WS:               wscon,
-		//Hub:              hub,
-	}
-	bot.InitBot()
-	h.Bot = &bot
+	//bot := telegram.Bot{
+	//	Config:           &cfg.Bot,
+	//	Logger:           zaplog,
+	//	UpdateChanBuffer: 128, // Buffer size is 128 default
+	//	Cache:            rdb,
+	//	DB:               db,
+	//	WS:               wscon,
+	//	//Hub:              hub,
+	//}
+	//bot.InitBot()
+	//h.Bot = &bot
 
 	rh := router.SetupRouter(h)
 
-	go bot.ReceiveUpdates() //TODO: no the best approach find other way to handle updates
+	botSrv := tg.NewBotService()
+	serviceMng := service.NewServiceManager()
+	serviceMng.RegisterService("bot-service", botSrv)
+	err = serviceMng.EnableService("bot-service")
+	if err != nil {
+		zaplog.Error("Failed to enable bot service", zap.Error(err))
+	}
+
+	//go bot.ReceiveUpdates() //TODO: no the best approach find other way to handle updates
 
 	server := &http.Server{
 		Addr:    cfg.Server.Host + ":" + cfg.Server.Port,
@@ -126,6 +135,11 @@ func main() {
 		zaplog.Fatal("Server forced to shutdown:", zap.Error(err))
 	}
 
+	// Stop the bot service
+	err = serviceMng.DisableService("bot-service")
+	if err != nil {
+		zaplog.Fatal("Failed to stop bot service", zap.Error(err))
+	}
 }
 
 // Migrate the database models
