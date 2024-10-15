@@ -30,6 +30,7 @@ func NewClient(brokers []string) (*Client, error) {
 	config := sarama.NewConfig()
 	config.Producer.Retry.Max = 5
 	config.Producer.RequiredAcks = sarama.WaitForAll
+	config.Producer.Return.Successes = true
 	config.Consumer.Return.Errors = true
 	config.Version = sarama.V3_6_0_0
 

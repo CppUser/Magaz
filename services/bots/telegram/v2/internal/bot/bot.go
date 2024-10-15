@@ -39,7 +39,7 @@ func NewBotService(config *config.BotConf) *BotService {
 
 	kf, err := kafka.NewClient([]string{"kafka:19092"})
 	if err != nil {
-		log.Fatal("Failed to create kafka client")
+		log.Fatalf("Failed to create kafka client")
 	}
 
 	return &BotService{
