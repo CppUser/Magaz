@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"log"
 	"sync"
+	"time"
 )
 
 type Message struct {
@@ -25,12 +26,19 @@ type Client struct {
 }
 
 func NewClient(brokers []string) (*Client, error) {
-	producer, err := sarama.NewSyncProducer(brokers, nil)
+
+	config := sarama.NewConfig()
+	config.Producer.Retry.Max = 5
+	config.Producer.RequiredAcks = sarama.WaitForAll
+	config.Consumer.Return.Errors = true
+	config.Version = sarama.V3_6_0_0
+
+	producer, err := sarama.NewSyncProducer(brokers, config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Kafka producer: %w", err)
 	}
 
-	consumer, err := sarama.NewConsumer(brokers, nil)
+	consumer, err := sarama.NewConsumer(brokers, config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Kafka consumer: %w", err)
 	}
@@ -83,6 +91,7 @@ func (p *Client) SendMessage(serviceName, action, payload string) error {
 }
 
 func (kc *Client) SendMessageWithResponse(service, action, payload string) (*Message, error) {
+
 	requestID := uuid.New().String()
 	message := Message{
 		RequestID: requestID,
@@ -102,6 +111,7 @@ func (kc *Client) SendMessageWithResponse(service, action, payload string) (*Mes
 		Value: sarama.ByteEncoder(messageBytes),
 	}
 
+	// Send the message to Kafka
 	partition, offset, err := kc.Producer.SendMessage(kafkaMessage)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send message to Kafka: %w", err)
@@ -119,6 +129,12 @@ func (kc *Client) SendMessageWithResponse(service, action, payload string) (*Mes
 	select {
 	case response := <-responseChan:
 		return response, nil
+	case <-time.After(10 * time.Second): // Timeout after 10 seconds
+		// Remove the response channel after timeout to avoid memory leaks
+		kc.mux.Lock()
+		delete(kc.responseChans, requestID)
+		kc.mux.Unlock()
+		return nil, fmt.Errorf("timeout waiting for response for request ID %s", requestID)
 	}
 }
 
@@ -139,6 +155,9 @@ func (kc *Client) ConsumeResponses(service string) {
 			continue
 		}
 
+		// Log the message for debugging
+		log.Printf("Received response from Kafka: %+v", msg)
+
 		// Check if there's a waiting channel for the response
 		kc.mux.Lock()
 		if responseChan, ok := kc.responseChans[msg.RequestID]; ok {
@@ -146,7 +165,35 @@ func (kc *Client) ConsumeResponses(service string) {
 			responseChan <- &msg
 			close(responseChan)
 			delete(kc.responseChans, msg.RequestID)
+		} else {
+			log.Printf("No waiting response channel for RequestID %s", msg.RequestID)
 		}
 		kc.mux.Unlock()
+	}
+}
+
+func (kc *Client) HandleUserResponse() {
+	//topic := fmt.Sprintf("%s_responses", service)
+	consumer, err := kc.Consumer.ConsumePartition("user_responses", 0, sarama.OffsetNewest)
+	if err != nil {
+		log.Fatalf("failed to start consumer for user_responses topic: %v", err)
+	}
+
+	defer func(consumer sarama.PartitionConsumer) {
+		err := consumer.Close()
+		if err != nil {
+			log.Fatalf("failed to close consumer for user_responses: %v", err)
+		}
+	}(consumer)
+
+	for message := range consumer.Messages() {
+		var msg Message
+		err := json.Unmarshal(message.Value, &msg)
+		if err != nil {
+			log.Printf("failed to unmarshal message: %v", err)
+			continue
+		}
+
+		log.Printf("Received response from user service: %+v", msg)
 	}
 }

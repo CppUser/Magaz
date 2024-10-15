@@ -661,6 +661,7 @@ func (b *BotService) Start() error {
 
 	b.running = true
 	//go b.HandleUserResponse()
+	go b.Msg.ConsumeResponses("user_service")
 
 	for token, updateChan := range b.Updates {
 		b.waitGroup.Add(1)
@@ -685,7 +686,7 @@ func (b *BotService) Start() error {
 				switch botType {
 				case "client":
 
-					msg, err := b.Msg.SendMessageWithResponse("user_service", "check_user", fmt.Sprintf("%d", update.Message.From.ID))
+					err := b.Msg.SendMessage("user_service", "check_user", fmt.Sprintf("%d", update.Message.From.ID))
 					if err != nil {
 						log.Printf("Failed to send message to user service: %v", err)
 						return
