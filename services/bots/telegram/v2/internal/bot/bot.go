@@ -2,7 +2,6 @@ package bot
 
 import (
 	"fmt"
-	"github.com/cppuser/magaz/services/brokers/client/kafka"
 	"github.com/mymmrac/telego"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
@@ -32,15 +31,15 @@ type BotService struct {
 	fsms      map[string]*fsm.RuleBasedFSM
 	Rdb       *redis.Client
 	waitGroup sync.WaitGroup
-	Msg       *kafka.Client
+	//Msg       *kafka.Client
 }
 
 func NewBotService(config *config.BotConf) *BotService {
 
-	kf, err := kafka.NewClient([]string{"kafka:19092"})
-	if err != nil {
-		log.Fatalf("Failed to create kafka client")
-	}
+	//kf, err := kafka.NewClient([]string{"kafka:19092"})
+	//if err != nil {
+	//	log.Fatalf("Failed to create Kafka client: %v", err)
+	//}
 
 	return &BotService{
 		Config:    config,
@@ -51,7 +50,7 @@ func NewBotService(config *config.BotConf) *BotService {
 		fsms:      make(map[string]*fsm.RuleBasedFSM),
 		Rdb:       redis.NewClient(&redis.Options{}),
 		waitGroup: sync.WaitGroup{},
-		Msg:       kf,
+		//Msg:       kf,
 	}
 }
 
@@ -670,7 +669,7 @@ func (b *BotService) Start() error {
 	//go b.HandleUserResponse()
 	//go b.Msg.ConsumeResponses("user_service")
 
-	go b.Msg.HandleUserResponse()
+	//go b.Msg.HandleUserResponse()
 
 	for token, updateChan := range b.Updates {
 		b.waitGroup.Add(1)
@@ -695,11 +694,11 @@ func (b *BotService) Start() error {
 				switch botType {
 				case "client":
 
-					err := b.Msg.SendMessage("user_service", "check_user", fmt.Sprintf("%d", update.Message.From.ID))
-					if err != nil {
-						log.Printf("Failed to send message to user service: %v", err)
-						return
-					}
+					//err := b.Msg.SendMessage("user_service", "check_user", fmt.Sprintf("%d", update.Message.From.ID))
+					//if err != nil {
+					//	log.Printf("Failed to send message to user service: %v", err)
+					//	return
+					//}
 
 					//log.Printf("Received message with payload %s", msg.Payload)
 
