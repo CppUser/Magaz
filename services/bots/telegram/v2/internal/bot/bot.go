@@ -1,13 +1,11 @@
 package bot
 
 import (
-	"encoding/json"
 	"fmt"
-	"github.com/IBM/sarama"
+	"github.com/cppuser/magaz/services/brokers/client/kafka"
 	"github.com/mymmrac/telego"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
-	"kafka"
 	"log"
 	"sync"
 	"tg/internal/bot/handler"
@@ -34,8 +32,7 @@ type BotService struct {
 	fsms      map[string]*fsm.RuleBasedFSM
 	Rdb       *redis.Client
 	waitGroup sync.WaitGroup
-	Producer  *kafka.Producer
-	Consumer  *kafka.Consumer
+	Msg       *kafka.Client
 }
 
 func NewBotService(config *config.BotConf) *BotService {
@@ -663,7 +660,7 @@ func (b *BotService) Start() error {
 	}
 
 	b.running = true
-	go b.HandleUserResponse()
+	//go b.HandleUserResponse()
 
 	for token, updateChan := range b.Updates {
 		b.waitGroup.Add(1)
@@ -688,13 +685,13 @@ func (b *BotService) Start() error {
 				switch botType {
 				case "client":
 
-					err := b.Producer.SendMessage("user_service", "check_user", fmt.Sprintf("%d", update.Message.From.ID))
+					msg, err := b.Msg.SendMessageWithResponse("user_service", "check_user", fmt.Sprintf("%d", update.Message.From.ID))
 					if err != nil {
 						log.Printf("Failed to send message to user service: %v", err)
 						return
 					}
 
-					log.Printf("Sent request to user service to check user: %d", update.Message.From.ID)
+					log.Printf("Received message with payload %s", msg.Payload)
 
 					handler.HandleClientUpdate(b.fsms["client"], bot, update)
 				case "empl":
@@ -742,29 +739,29 @@ func (b *BotService) Status() string {
 
 ////////////////////////TEMP///////TESTING/////////////
 
-func (b *BotService) HandleUserResponse() {
-	consumer, err := b.Consumer.ConsumePartition("user_responses", 0, sarama.OffsetNewest)
-	if err != nil {
-		log.Fatalf("failed to start consumer for user_responses topic: %v", err)
-	}
-
-	defer func(consumer sarama.PartitionConsumer) {
-		err := consumer.Close()
-		if err != nil {
-			log.Fatalf("failed to close consumer for user_responses: %v", err)
-		}
-	}(consumer)
-
-	for message := range consumer.Messages() {
-		var msg Message
-		err := json.Unmarshal(message.Value, &msg)
-		if err != nil {
-			log.Printf("failed to unmarshal message: %v", err)
-			continue
-		}
-
-		log.Printf("Received response from user service: %+v", msg)
-	}
-}
+//func (b *BotService) HandleUserResponse() {
+//	consumer, err := b.Consumer.ConsumePartition("user_responses", 0, sarama.OffsetNewest)
+//	if err != nil {
+//		log.Fatalf("failed to start consumer for user_responses topic: %v", err)
+//	}
+//
+//	defer func(consumer sarama.PartitionConsumer) {
+//		err := consumer.Close()
+//		if err != nil {
+//			log.Fatalf("failed to close consumer for user_responses: %v", err)
+//		}
+//	}(consumer)
+//
+//	for message := range consumer.Messages() {
+//		var msg Message
+//		err := json.Unmarshal(message.Value, &msg)
+//		if err != nil {
+//			log.Printf("failed to unmarshal message: %v", err)
+//			continue
+//		}
+//
+//		log.Printf("Received response from user service: %+v", msg)
+//	}
+//}
 
 ///////////////////////////////////////////////////////

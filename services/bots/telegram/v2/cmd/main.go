@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"errors"
-	"github.com/cppuser/magaz"
+	"github.com/cppuser/magaz/services/brokers/client/kafka"
 	"github.com/gin-gonic/gin"
 	"github.com/mymmrac/telego"
 	"go.uber.org/zap"
@@ -18,6 +18,7 @@ import (
 	"tg/internal/config"
 	"tg/internal/utlis/logger"
 	"tg/pkg/utils/service"
+	"time"
 )
 
 type AppConfig struct {
@@ -40,19 +41,9 @@ func main() {
 
 	///TODO: Move this to NewProducer init call
 
-	kClient, err := kafka.NewClient([]string{"kafka:19092"})
+	kf, err := kafka.NewClient([]string{"kafka:19092"})
 	if err != nil {
 		zlog.Fatal("Failed to create kafka client")
-	}
-
-	producer, err := kafka.NewProducer([]string{"kafka:19092"})
-	if err != nil {
-		zlog.Error("Failed to create kafka producer")
-	}
-
-	consumer, err := kafka.NewConsumer([]string{"kafka:19092"})
-	if err != nil {
-		zlog.Error("Failed to create kafka consumer")
 	}
 
 	// Start ngrok tunnel
@@ -69,8 +60,7 @@ func main() {
 	//TODO: refactor
 	botSrv := bot.NewBotService(botCfg)
 	botSrv.URL = tun.URL()
-	botSrv.Producer = producer
-	botSrv.Consumer = consumer
+	botSrv.Msg = kf
 	app.BotSrv = botSrv
 
 	serviceMng := service.NewServiceManager()
