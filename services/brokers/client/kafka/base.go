@@ -26,7 +26,7 @@ type Client struct {
 }
 
 func NewClient(brokers []string) (*Client, error) {
-
+	log.Printf("Creating new kafka client")
 	config := sarama.NewConfig()
 	config.Producer.Retry.Max = 5
 	config.Producer.RequiredAcks = sarama.WaitForAll

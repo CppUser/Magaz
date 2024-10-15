@@ -36,6 +36,12 @@ type BotService struct {
 }
 
 func NewBotService(config *config.BotConf) *BotService {
+
+	kf, err := kafka.NewClient([]string{"kafka:19092"})
+	if err != nil {
+		log.Fatal("Failed to create kafka client")
+	}
+
 	return &BotService{
 		Config:    config,
 		Logger:    zap.NewNop(),
@@ -45,6 +51,7 @@ func NewBotService(config *config.BotConf) *BotService {
 		fsms:      make(map[string]*fsm.RuleBasedFSM),
 		Rdb:       redis.NewClient(&redis.Options{}),
 		waitGroup: sync.WaitGroup{},
+		Msg:       kf,
 	}
 }
 
@@ -661,7 +668,9 @@ func (b *BotService) Start() error {
 
 	b.running = true
 	//go b.HandleUserResponse()
-	go b.Msg.ConsumeResponses("user_service")
+	//go b.Msg.ConsumeResponses("user_service")
+
+	go b.Msg.HandleUserResponse()
 
 	for token, updateChan := range b.Updates {
 		b.waitGroup.Add(1)
@@ -692,7 +701,7 @@ func (b *BotService) Start() error {
 						return
 					}
 
-					log.Printf("Received message with payload %s", msg.Payload)
+					//log.Printf("Received message with payload %s", msg.Payload)
 
 					handler.HandleClientUpdate(b.fsms["client"], bot, update)
 				case "empl":

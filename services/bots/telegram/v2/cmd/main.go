@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"github.com/cppuser/magaz/services/brokers/client/kafka"
 	"github.com/gin-gonic/gin"
 	"github.com/mymmrac/telego"
 	"go.uber.org/zap"
@@ -41,11 +40,6 @@ func main() {
 
 	///TODO: Move this to NewProducer init call
 
-	kf, err := kafka.NewClient([]string{"kafka:19092"})
-	if err != nil {
-		zlog.Fatal("Failed to create kafka client")
-	}
-
 	// Start ngrok tunnel
 	tun, err := ngrok.Listen(context.Background(),
 		cfg.HTTPEndpoint(cfg.WithForwardsTo(":8080")),
@@ -60,7 +54,6 @@ func main() {
 	//TODO: refactor
 	botSrv := bot.NewBotService(botCfg)
 	botSrv.URL = tun.URL()
-	botSrv.Msg = kf
 	app.BotSrv = botSrv
 
 	serviceMng := service.NewServiceManager()
